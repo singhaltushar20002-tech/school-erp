@@ -17,4 +17,6 @@ export const appConfig = {
     process.env.NEXT_PUBLIC_SITE_URL ||
     `http://${rootDomain}${appPort ? `:${appPort}` : ""}`,
   isProduction: process.env.NODE_ENV === "production",
+  /** `<slug>.localhost` works like `<slug>.<rootDomain>` outside production. */
+  localhostAlias: process.env.NODE_ENV !== "production",
 } as const

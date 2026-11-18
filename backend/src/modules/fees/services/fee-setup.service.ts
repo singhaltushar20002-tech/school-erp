@@ -6,13 +6,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { In } from 'typeorm';
-import { DEFAULT_FEE_HEADS } from '~/shared/templates';
+import { FEE_HEAD_TEMPLATES } from '~/shared/templates';
 import { TENANT_DATASOURCE } from '~/tenancy/tenancy.constants';
 import { TenantDataSourceProxy } from '~/tenancy/tenant-datasource.proxy';
 import { AcademicYearService } from '~/modules/academic-years/academic-year.service';
 import { AUDIT_ACTIONS } from '~/modules/audit/audit-actions';
 import { AuditService } from '~/modules/audit/services/audit.service';
 import { ClassService } from '~/modules/classes/class.service';
+import { SettingsService } from '~/modules/settings/services/settings.service';
 import { ShiftService } from '~/modules/shifts/shift.service';
 import { SubjectGroupService } from '~/modules/subject-groups/services/subject-group.service';
 import {
@@ -65,6 +66,7 @@ export class FeeSetupService {
     private readonly subjectGroups: SubjectGroupService,
     private readonly shifts: ShiftService,
     private readonly audit: AuditService,
+    private readonly settings: SettingsService,
     @Inject(TENANT_DATASOURCE) private readonly ds: TenantDataSourceProxy,
   ) {}
 
@@ -102,9 +104,14 @@ export class FeeSetupService {
     await this.headRepo.deleteById(id);
   }
 
-  /** Onboarding: the default fee heads, adding only missing names. */
+  /**
+   * Onboarding: the default fee heads of the school's country, adding only
+   * missing names.
+   */
   applyDefaultHeads(): Promise<{ created: number; skipped: number }> {
     return this.ds.runInTransaction(async () => {
+      const { country } = await this.settings.getSection('locale');
+      const DEFAULT_FEE_HEADS = FEE_HEAD_TEMPLATES[country];
       const existing = new Set(
         (await this.listHeads()).map((h) => h.name.trim().toLowerCase()),
       );

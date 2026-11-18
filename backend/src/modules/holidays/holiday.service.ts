@@ -12,8 +12,7 @@ import {
 } from 'typeorm';
 import { Paginated } from '~/common/dto/paginated.dto';
 import {
-  BD_FIXED_HOLIDAYS,
-  BD_MOVABLE_HOLIDAYS,
+  HOLIDAY_TEMPLATES,
   type MovableHolidayTemplate,
 } from '~/shared/templates';
 import { TENANT_DATASOURCE } from '~/tenancy/tenancy.constants';
@@ -131,16 +130,18 @@ export class HolidayService {
   }
 
   /**
-   * Adds the Bangladesh fixed-date holidays for a year (idempotent: a
-   * holiday with the same name and start is skipped) and lists the
-   * moon-dependent ones for the school to add.
+   * Adds the fixed-date holidays of the school's country for a year
+   * (idempotent: a holiday with the same name and start is skipped) and
+   * lists the moon-dependent ones for the school to add.
    */
-  applyBdTemplate(year?: number): Promise<HolidayTemplateResult> {
+  applyTemplate(year?: number): Promise<HolidayTemplateResult> {
     return this.ds.runInTransaction(async () => {
       const y = year ?? Number((await this.settings.today()).slice(0, 4));
+      const { country } = await this.settings.getSection('locale');
+      const template = HOLIDAY_TEMPLATES[country];
       let created = 0;
       let skipped = 0;
-      for (const t of BD_FIXED_HOLIDAYS) {
+      for (const t of template.fixed) {
         const date = `${y}-${pad(t.month)}-${pad(t.day)}`;
         if (await this.holidayRepo.findByNameAndStart(t.name, date)) {
           skipped++;
@@ -148,7 +149,7 @@ export class HolidayService {
         }
         await this.holidayRepo.saveNew({
           name: t.name,
-          nameBn: t.nameBn,
+          nameBn: t.nameBn ?? null,
           type: t.type as HolidayType,
           dateFrom: date,
           dateTo: date,
@@ -159,10 +160,10 @@ export class HolidayService {
       await this.audit.record({
         action: AUDIT_ACTIONS.TEMPLATE_APPLIED,
         entityType: 'template',
-        entityId: 'bd-holidays',
-        after: { template: 'bd', year: y, created, skipped },
+        entityId: `${template.code}-holidays`,
+        after: { template: template.code, year: y, created, skipped },
       });
-      return { year: y, created, skipped, toConfirm: BD_MOVABLE_HOLIDAYS };
+      return { year: y, created, skipped, toConfirm: template.movable };
     });
   }
 

@@ -18,8 +18,7 @@ export interface PortalNavItem {
 }
 
 /**
- * The portal's sections (bottom navigation on phones, tabs above). Only
- * Home is built in this slice; the rest show "Coming soon".
+ * The portal's sections (bottom navigation on phones, tabs above).
  */
 export const PORTAL_NAV: PortalNavItem[] = [
   { id: "home", href: "/student", icon: HouseIcon },

@@ -44,15 +44,15 @@ const GROUPS = [
     ],
   },
   {
-    title: "Bangla & grading",
+    title: "Language & grading",
     items: [
       {
         q: "Is it available in my language?",
-        a: "Yes. Every screen, report card and receipt is available in English, Bangla and Hindi, and each person chooses their own language.",
+        a: "Yes. Every screen, report card and receipt is available in English and Hindi, and each person chooses their own language.",
       },
       {
-        q: "We follow Cambridge, or we are a madrasa. Will the grading fit?",
-        a: "Board-exam grading on the GPA 5.0 scale is the default, and GPA 4.0, Cambridge and madrasa scales are available. You can also set up your own grade bands and pass marks.",
+        q: "We are CBSE, ICSE or a state board. Will the grading fit?",
+        a: "The CBSE nine-point scale (A1 to E) is ready to use, and percentage-with-division grading covers ICSE and state boards. You can also set up your own grade bands and pass marks.",
       },
     ],
   },

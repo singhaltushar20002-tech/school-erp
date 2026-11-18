@@ -120,13 +120,7 @@ function Summary({ data }: { data: ChildDashboard }) {
         <StatTile
           label={t("today")}
           icon={today ? STATUS_ICONS[today.countsAs] : <CalendarCheckIcon />}
-          value={
-            today
-              ? locale === "bn"
-                ? today.labelBn
-                : today.label
-              : t("notTaken")
-          }
+          value={today ? today.label : t("notTaken")}
           hint={today ? undefined : t("notTakenHint")}
         />
         <StatTile

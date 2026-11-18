@@ -253,6 +253,11 @@ export const NAV: NavCategory[] = [
             permission: "fees:read",
           },
           {
+            id: "dues",
+            href: "/dashboard/fees/dues",
+            permission: "fees:read",
+          },
+          {
             id: "feeSetup",
             href: "/dashboard/fees/setup",
             permission: "fees:setup",

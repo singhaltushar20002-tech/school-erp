@@ -276,7 +276,32 @@ export class PaymentService {
     });
   }
 
-  findPayments(filter: FilterPaymentDto): Promise<Paginated<Payment>> {
+  /** Payments, newest first, each with its receipt (number, status). */
+  async findPayments(filter: FilterPaymentDto): Promise<
+    Paginated<
+      Payment & {
+        receipt: { id: string; number: string; status: ReceiptStatus } | null;
+      }
+    >
+  > {
+    const page = await this.listPayments(filter);
+    const receipts = page.items.length
+      ? await this.receiptRepo.find({
+          where: { paymentId: In(page.items.map((p) => p.id)) },
+        })
+      : [];
+    const byPayment = new Map(receipts.map((r) => [r.paymentId, r]));
+    return Object.assign(page, {
+      items: page.items.map((p) => {
+        const r = byPayment.get(p.id);
+        return Object.assign(p, {
+          receipt: r ? { id: r.id, number: r.number, status: r.status } : null,
+        });
+      }),
+    });
+  }
+
+  private listPayments(filter: FilterPaymentDto): Promise<Paginated<Payment>> {
     const where: FindOptionsWhere<Payment> = {};
     if (filter.studentId) where.studentId = filter.studentId;
     if (filter.receivedBy) where.receivedBy = filter.receivedBy;

@@ -75,7 +75,7 @@ export function SiteFooter() {
                 {CONTACT_EMAIL}
               </a>
             </li>
-            <li className="text-brand-foreground/75">Dhaka, Bangladesh</li>
+            <li className="text-brand-foreground/75">India</li>
           </ul>
         </div>
       </Container>

@@ -30,10 +30,7 @@ export function Hero() {
           <div className="flex flex-col items-start gap-6">
             <Badge variant="outline" className="h-7 bg-card px-3 text-sm">
               <span className="size-1.5 rounded-full bg-primary" />
-              For schools in English, <span className="font-bangla">
-                বাংলা
-              </span>{" "}
-              and{" "}
+              For schools in English and{" "}
               <span
                 lang="hi"
                 className="font-[family-name:var(--font-devanagari)]"

@@ -2,7 +2,9 @@
   <div class='head'>
     <div class='school'>{{schoolName}}</div>
     {{#if schoolNameBn}}<div class='serif'>{{schoolNameBn}}</div>{{/if}}
-    <div class='title'>Money Receipt · টাকা প্রাপ্তির রসিদ</div>
+    {{#if address}}<div class='addr'>{{address}}</div>{{/if}}
+    {{#if phone}}<div class='addr'>Phone {{phone}}</div>{{/if}}
+    <div class='title'>Fee Receipt</div>
   </div>
   {{#if cancelled}}<div class='stamp'>CANCELLED</div>{{/if}}
   <table class='meta'>

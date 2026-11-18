@@ -17,8 +17,8 @@ export class UpdateOrganizationSettingsDto {
   @IsString() @Length(3, 100) name?: string;
   @IsEnum(OrganizationType) type?: OrganizationType;
 
-  /** Bangladesh EIIN (institution id), digits only; null clears it. */
-  @IsOptional() @Matches(/^\d{4,10}$/) eiin?: string | null;
+  /** UDISE+ code (India) or EIIN (Bangladesh), digits only; null clears it. */
+  @IsOptional() @Matches(/^\d{4,11}$/) eiin?: string | null;
 
   /** Show the school in the public "Find your school" directory. */
   @IsBoolean() listedInDirectory?: boolean;

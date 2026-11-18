@@ -161,7 +161,7 @@ function FeeYear({ heads }: { heads: FeeHead[] }) {
                       title={m}
                     >
                       {/* The first letter or two: the title has the rest. */}
-                      {m.slice(0, locale === "bn" ? 2 : 1)}
+                      {m.slice(0, 1)}
                     </span>
                   ))}
                 </span>

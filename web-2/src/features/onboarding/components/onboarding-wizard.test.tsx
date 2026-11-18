@@ -443,7 +443,7 @@ function backend(state: State) {
         state.holidays = holidays.filter((h) => h.id !== holidayId)
         return reply(200, { success: true, data: null })
       }
-      if (key === "POST /api/onboarding/templates/holidays/bd/apply") {
+      if (key === "POST /api/onboarding/templates/holidays/apply") {
         const before = holidays.length
         for (const h of TEMPLATES.holidays.fixed) {
           const dateFrom = `${body.year}-${String(h.month).padStart(2, "0")}-${String(h.day).padStart(2, "0")}`
@@ -681,13 +681,15 @@ describe("OnboardingWizard", () => {
     expect(within(panel).getByRole("radio", { name: "College" })).toBeChecked()
     await userEvent.type(within(panel).getByLabelText("District"), "Dhaka")
     await userEvent.type(within(panel).getByLabelText("Phone"), "01712345678")
-    const eiin = within(panel).getByLabelText("EIIN")
+    const eiin = within(panel).getByLabelText("UDISE code")
     await userEvent.type(eiin, "12")
     const save = within(panel).getByRole("button", {
       name: "Save and continue",
     })
     await userEvent.click(save)
-    expect(within(panel).getByText("An EIIN is 4 to 10 digits")).toBeTruthy()
+    expect(
+      within(panel).getByText("A UDISE code is up to 11 digits")
+    ).toBeTruthy()
     await userEvent.type(eiin, "8256")
     await userEvent.click(save)
 
@@ -716,7 +718,7 @@ describe("OnboardingWizard", () => {
     )
   })
 
-  it("creates the current session for this calendar year", async () => {
+  it("creates the current April–March session", async () => {
     state.checklist = checklist(["profile"])
     renderWizard()
     const panel = await screen.findByRole("region", {
@@ -725,14 +727,16 @@ describe("OnboardingWizard", () => {
     await userEvent.click(
       await within(panel).findByRole("button", { name: "Create session" })
     )
-    const year = new Date().getFullYear()
+    const today = new Date()
+    const april =
+      today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1
     await waitFor(() =>
       expect(
         api.calls.find((c) => c.path === "/api/academic-years")?.body
       ).toEqual({
-        name: String(year),
-        startDate: `${year}-01-01`,
-        endDate: `${year}-12-31`,
+        name: `${april}–${april + 1}`,
+        startDate: `${april}-04-01`,
+        endDate: `${april + 1}-03-31`,
         isCurrent: true,
       })
     )
@@ -744,10 +748,10 @@ describe("OnboardingWizard", () => {
     const panel = await screen.findByRole("region", {
       name: "Academic session",
     })
-    const calendar = await within(panel).findByRole("button", {
-      name: /January – December/,
+    const april = await within(panel).findByRole("button", {
+      name: /April – March/,
     })
-    expect(calendar.getAttribute("aria-pressed")).toBe("true")
+    expect(april.getAttribute("aria-pressed")).toBe("true")
     // The dates are set by the choice: no date fields until custom.
     expect(within(panel).queryByLabelText("Starts on")).toBeNull()
 

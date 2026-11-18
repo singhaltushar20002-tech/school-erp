@@ -118,7 +118,13 @@ export interface ProfileSettings {
   homePage: HomePageSettings;
 }
 
+/** Countries the product is set up for: templates (holidays, fee heads) follow it. */
+export const COUNTRIES = ['IN', 'BD'] as const;
+export type Country = (typeof COUNTRIES)[number];
+
 export interface LocaleSettings {
+  /** ISO 3166-1 alpha-2; picks the holiday and fee-head templates. */
+  country: Country;
   language: Locale;
   dateFormat: DateFormat;
   numerals: 'bn' | 'en';

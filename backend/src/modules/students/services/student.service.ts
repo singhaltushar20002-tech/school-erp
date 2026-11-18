@@ -42,6 +42,7 @@ import {
 import { StudentStatusHistoryRepository } from '../repositories/student-status-history.repository';
 import {
   StudentRepository,
+  type StudentPlacement,
   type StudentSearch,
 } from '../repositories/student.repository';
 
@@ -102,11 +103,22 @@ export class StudentService {
   async findFiltered(
     filter: FilterStudentDto,
     allowedSectionIds: string[] | null = null,
-  ): Promise<Paginated<Student>> {
-    return this.studentRepo.search(
-      await this.criteria(filter, allowedSectionIds),
-      filter,
+  ): Promise<Paginated<Student & { placement: StudentPlacement | null }>> {
+    const criteria = await this.criteria(filter, allowedSectionIds);
+    const page = await this.studentRepo.search(criteria, filter);
+    // Each row's class, section and roll in the session listed (the
+    // current one unless the filter names another).
+    const yearId =
+      criteria.placement?.academicYearId ?? (await this.currentYearId());
+    const placements = await this.studentRepo.placements(
+      page.items.map((s) => s.id),
+      yearId,
     );
+    return Object.assign(page, {
+      items: page.items.map((s) =>
+        Object.assign(s, { placement: placements.get(s.id) ?? null }),
+      ),
+    });
   }
 
   /** Every match, page by page (exports). */

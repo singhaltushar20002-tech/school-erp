@@ -37,7 +37,7 @@ import { StepActions, StepLoadFailed } from "./step-parts"
 import { useSetupAction } from "../use-setup-action"
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const EIIN = /^\d{4,10}$/
+const EIIN = /^\d{4,11}$/
 
 const TYPE_ICONS: Record<SchoolType, LucideIcon> = {
   school: SchoolIcon,
@@ -162,19 +162,11 @@ function ProfileForm({
               autoComplete="organization"
             />
           </FormField>
-          <FormField id="profile-nameBn" label={t("nameBn")}>
-            <Input
-              {...field("nameBn")}
-              lang="bn"
-              maxLength={150}
-              placeholder={t("nameBnPlaceholder")}
-            />
-          </FormField>
           <FormField id="profile-eiin" label={t("eiin")} error={errors.eiin}>
             <Input
               {...field("eiin")}
               inputMode="numeric"
-              maxLength={10}
+              maxLength={11}
               placeholder={t("eiinPlaceholder")}
               className="sm:max-w-40"
             />
@@ -404,18 +396,6 @@ function Letterhead({
               </span>
             ) : (
               <Slot onClick={() => onFocusField("name")}>{t("slotName")}</Slot>
-            )}
-            {v.nameBn ? (
-              <span
-                lang="bn"
-                className="font-bangla text-lg leading-snug font-semibold text-balance"
-              >
-                {v.nameBn}
-              </span>
-            ) : (
-              <Slot onClick={() => onFocusField("nameBn")}>
-                {t("slotNameBn")}
-              </Slot>
             )}
           </div>
           <div className="flex max-w-xl flex-col items-center gap-1 text-sm">

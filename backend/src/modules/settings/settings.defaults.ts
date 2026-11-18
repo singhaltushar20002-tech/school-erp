@@ -53,13 +53,14 @@ export const DEFAULT_SETTINGS: OrgSettingsValues = {
     },
   },
   locale: {
+    country: 'IN',
     language: 'en',
     dateFormat: 'DD/MM/YYYY',
     numerals: 'en',
-    currency: 'BDT',
-    timeZone: 'Asia/Dhaka',
-    weekStart: 'saturday',
-    weekendDays: ['friday'],
+    currency: 'INR',
+    timeZone: 'Asia/Kolkata',
+    weekStart: 'monday',
+    weekendDays: ['sunday'],
   },
   numbering: {
     studentId: '{YY}{CLASS}{SEQ:4}',

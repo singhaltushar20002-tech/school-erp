@@ -134,7 +134,14 @@ describe("visibleNav", () => {
         staff: ["staffDirectory", "departments", "designations"],
       },
       finance: {
-        fees: ["collectFees", "invoices", "payments", "feeSetup", "approvals"],
+        fees: [
+          "collectFees",
+          "invoices",
+          "payments",
+          "dues",
+          "feeSetup",
+          "approvals",
+        ],
         expenses: [],
         ledger: [],
       },

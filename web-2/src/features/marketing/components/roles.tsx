@@ -46,10 +46,10 @@ function OwnerPreview() {
     <div className="flex flex-col gap-5 p-5">
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Present today" value="94.2%" note="1,268 of 1,346" />
-        <Stat label="Collected today" value="৳2.53L" note="2 counters" />
+        <Stat label="Collected today" value="₹2.53L" note="2 counters" />
         <Stat
           label="Still due"
-          value="৳3.1L"
+          value="₹3.1L"
           note="214 students"
           tone="alert"
         />
@@ -95,7 +95,7 @@ function OwnerPreview() {
         <div>
           <p className="mb-1.5 text-xs font-semibold">Recent activity</p>
           <ul className="flex flex-col gap-1">
-            <li>Receipt 004817, ৳4,020</li>
+            <li>Receipt 004817, ₹4,020</li>
             <li>Notice: exam routine</li>
             <li>New admission, Class 6 C</li>
           </ul>
@@ -190,7 +190,7 @@ const ROLES = [
       <ListPreview
         rows={[
           ["Receipts today", "86"],
-          ["Collected", "৳1,42,500"],
+          ["Collected", "₹1,42,500"],
           ["Cancelled, with reason", "1"],
           ["Next receipt number", "004818"],
         ]}
@@ -221,7 +221,7 @@ const ROLES = [
   {
     value: "guardians",
     label: "Guardians",
-    title: "Each child's day, in Bangla or English",
+    title: "Each child's day, in their own language",
     points: [
       "Attendance the same morning it is taken",
       "Dues, receipts and published results",
@@ -231,9 +231,9 @@ const ROLES = [
     preview: (
       <ListPreview
         rows={[
-          ["Nusrat, Class 8 B", "Present"],
-          ["Tanvir, Class 4 A", "Present"],
-          ["October fees", "Paid ৳4,020"],
+          ["Ananya, Class 8 B", "Present"],
+          ["Tanmay, Class 4 A", "Present"],
+          ["October fees", "Paid ₹4,020"],
           ["Half-yearly results", "Published"],
         ]}
       />

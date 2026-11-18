@@ -14,6 +14,24 @@ describe('normalizePhone', () => {
     expect(normalizePhone(input)).toBe(expected);
   });
 
+  it.each([
+    ['9876543210', '+919876543210'],
+    ['09876543210', '+919876543210'],
+    ['919876543210', '+919876543210'],
+    ['+91 98765-43210', '+919876543210'],
+    ['0091 98765 43210', '+919876543210'],
+    ['(+91) 6123 456 789', '+916123456789'],
+  ])('normalizes Indian mobile %s', (input, expected) => {
+    expect(normalizePhone(input)).toBe(expected);
+  });
+
+  it.each(['5876543210', '+915876543210', '+91987654321'])(
+    'rejects Indian number %s that is not a mobile',
+    (input) => {
+      expect(normalizePhone(input)).toBeNull();
+    },
+  );
+
   it('keeps international E.164 numbers', () => {
     expect(normalizePhone('+44 20 7946 0958')).toBe('+442079460958');
   });

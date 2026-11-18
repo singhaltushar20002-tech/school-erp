@@ -52,11 +52,11 @@ const MOMENTS: {
     time: "10:00",
     who: "Guardian",
     title: "Guardians know about an absence the same morning",
-    body: "Rafi's absence shows up in his guardian's portal, in Bangla or English. If he turns up late and is marked in, the record updates.",
+    body: "Rohan's absence shows up in his guardian's portal. If he turns up late and is marked in, the record updates.",
     proof: (
-      <p className="rounded-xl bg-secondary px-4 py-3 font-bangla text-sm leading-relaxed text-secondary-foreground">
-        প্রিয় অভিভাবক, রাফি আহমেদ (৬ষ্ঠ ক, রোল ৭) আজ ১৯ অক্টোবর বিদ্যালয়ে
-        অনুপস্থিত।
+      <p className="rounded-xl bg-secondary px-4 py-3 text-sm leading-relaxed text-secondary-foreground">
+        Dear guardian, Rohan Mehta (6 A, roll 7) was absent from school today,
+        19 October.
       </p>
     ),
   },
@@ -72,15 +72,15 @@ const MOMENTS: {
         </p>
         <Lines
           rows={[
-            ["Nusrat, Class 8 B", "৳2,400"],
-            ["Tanvir, Class 4 A", "৳1,800"],
-            ["Sibling discount", "−৳180"],
+            ["Ananya, Class 8 B", "₹2,400"],
+            ["Tanmay, Class 4 A", "₹1,800"],
+            ["Sibling discount", "−₹180"],
           ]}
         />
         <Separator />
         <div className="flex justify-between text-sm font-semibold">
           <span>Paid</span>
-          <span className="tabular-nums">৳4,020</span>
+          <span className="tabular-nums">₹4,020</span>
         </div>
       </div>
     ),
@@ -94,7 +94,7 @@ const MOMENTS: {
       <div className="flex flex-col gap-2">
         <div className="flex justify-between text-sm font-semibold">
           <span>Collected today</span>
-          <span className="tabular-nums">৳2,52,740</span>
+          <span className="tabular-nums">₹2,52,740</span>
         </div>
         <Progress
           value={56}
@@ -102,9 +102,9 @@ const MOMENTS: {
         />
         <Lines
           rows={[
-            ["Counter 1, Rahima", "৳1,42,500"],
-            ["Counter 2, Jalal", "৳86,240"],
-            ["Bank deposit slips", "৳24,000"],
+            ["Counter 1, Meena", "₹1,42,500"],
+            ["Counter 2, Suresh", "₹86,240"],
+            ["UPI", "₹24,000"],
           ]}
         />
       </div>

@@ -22,6 +22,12 @@ export type HostKind = HostInfo["kind"]
 export interface HostConfig {
   rootDomain: string
   adminHost: string
+  /**
+   * Development only: `<slug>.localhost` and `admin.localhost` serve like
+   * the root domain's hosts (browsers resolve `*.localhost` to this
+   * machine without DNS, and local tools trust it).
+   */
+  localhostAlias?: boolean
 }
 
 /** `Acme.LVH.me:3000` → `acme.lvh.me`; also drops a trailing dot. */
@@ -47,11 +53,17 @@ export function classifyHost(host: string, config: HostConfig): HostInfo {
   ) {
     return { kind: "site", hostname }
   }
-  if (hostname === config.adminHost.toLowerCase()) {
+  if (
+    hostname === config.adminHost.toLowerCase() ||
+    (config.localhostAlias && hostname === "admin.localhost")
+  ) {
     return { kind: "admin", hostname }
   }
-  if (hostname.endsWith(`.${root}`)) {
-    const label = hostname.slice(0, -(root.length + 1))
+  const under = [root, ...(config.localhostAlias ? ["localhost"] : [])].find(
+    (r) => hostname.endsWith(`.${r}`)
+  )
+  if (under) {
+    const label = hostname.slice(0, -(under.length + 1))
     if (label.includes(".") || isReservedSlug(label) || !isValidSlug(label)) {
       return { kind: "unknown", hostname }
     }

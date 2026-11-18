@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   ],
   // `next dev` only serves its scripts and HMR to localhost by default;
   // school and admin hosts are subdomains of the root domain.
-  allowedDevOrigins: [ROOT_DOMAIN, `*.${ROOT_DOMAIN}`],
+  allowedDevOrigins: [ROOT_DOMAIN, `*.${ROOT_DOMAIN}`, "*.localhost"],
   turbopack: {
     resolveAlias: {
       // Turbopack aliases must be relative.

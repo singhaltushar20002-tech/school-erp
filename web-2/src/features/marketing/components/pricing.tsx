@@ -11,7 +11,7 @@ const PLANS = [
   {
     name: "Free",
     audience: "Up to 100 students",
-    price: "৳0",
+    price: "₹0",
     unit: "free, with no time limit",
     includesLabel: "To try it, or for a very small school",
     features: [
@@ -25,7 +25,7 @@ const PLANS = [
   {
     name: "Basic",
     audience: "Small schools",
-    price: "৳20",
+    price: "₹20",
     unit: "per student a month",
     includesLabel: "Everything in Free, plus",
     features: [
@@ -39,7 +39,7 @@ const PLANS = [
   {
     name: "Standard",
     audience: "Mid-size schools",
-    price: "৳35",
+    price: "₹35",
     unit: "per student a month",
     includesLabel: "Everything in Basic, plus",
     features: [
@@ -53,7 +53,7 @@ const PLANS = [
   {
     name: "Premium",
     audience: "Large schools",
-    price: "৳55",
+    price: "₹55",
     unit: "per student a month",
     includesLabel: "Everything in Standard, plus",
     features: [

@@ -90,11 +90,11 @@ describe('MailService', () => {
   });
 
   it("lets the caller's locale win over the request's", async () => {
-    await inRequest('hi', () =>
-      service().sendActivationEmail('a@x.test', 'Rina', 'tok', 'acme', 'bn'),
+    await inRequest('en', () =>
+      service().sendActivationEmail('a@x.test', 'Rina', 'tok', 'acme', 'hi'),
     );
-    expect(sent[0].subject).toBe('অ্যাকাউন্ট চালু করুন');
-    expect(sent[0].html).toContain("<html lang='bn'>");
+    expect(sent[0].subject).toBe('अपना खाता सक्रिय करें');
+    expect(sent[0].html).toContain("<html lang='hi'>");
   });
 
   it.each(LOCALES)('renders every account email in %s', async (locale) => {

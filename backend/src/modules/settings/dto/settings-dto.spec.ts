@@ -34,20 +34,22 @@ describe('settings DTOs', () => {
   it('checks locale values', async () => {
     expect(
       await errors(UpdateLocaleSettingsDto, {
-        language: 'bn',
-        timeZone: 'Asia/Dhaka',
-        currency: 'BDT',
-        weekendDays: ['friday', 'saturday'],
+        country: 'IN',
+        language: 'hi',
+        timeZone: 'Asia/Kolkata',
+        currency: 'INR',
+        weekendDays: ['sunday'],
       }),
     ).toEqual([]);
     expect(
       await errors(UpdateLocaleSettingsDto, {
+        country: 'XX',
         language: 'fr',
         timeZone: 'Mars/Olympus',
         currency: 'TAKA',
         weekendDays: ['friday', 'friday'],
       }),
-    ).toEqual(['currency', 'language', 'timeZone', 'weekendDays']);
+    ).toEqual(['country', 'currency', 'language', 'timeZone', 'weekendDays']);
   });
 
   it('refuses null for a field that has no "unset" state', async () => {

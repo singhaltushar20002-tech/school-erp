@@ -1,5 +1,6 @@
 import { ALIA_MADRASA_TEMPLATE } from './curriculum/alia-madrasa';
 import { CAMBRIDGE_TEMPLATE } from './curriculum/cambridge';
+import { CBSE_TEMPLATE as CBSE_CURRICULUM } from './curriculum/cbse';
 import type { CurriculumTemplate } from './curriculum/curriculum-template';
 import { NCTB_TEMPLATE } from './curriculum/nctb';
 
@@ -10,6 +11,7 @@ export * from './holidays';
 
 /** Curriculum templates by code. */
 export const CURRICULUM_TEMPLATES: readonly CurriculumTemplate[] = [
+  CBSE_CURRICULUM,
   NCTB_TEMPLATE,
   CAMBRIDGE_TEMPLATE,
   ALIA_MADRASA_TEMPLATE,

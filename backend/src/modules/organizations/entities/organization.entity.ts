@@ -96,8 +96,11 @@ export class Organization {
   @Column({ name: 'listed_in_directory', type: 'boolean', default: false })
   listedInDirectory: boolean;
 
-  /** Bangladesh Educational Institution Identification Number. */
-  @Column({ type: 'varchar', length: 10, nullable: true })
+  /**
+   * The school's government code: India's UDISE+ code (11 digits) or
+   * Bangladesh's EIIN (Educational Institution Identification Number).
+   */
+  @Column({ type: 'varchar', length: 11, nullable: true })
   eiin: string | null;
 
   /** A `files` row of this school (purpose `org_logo`). */
