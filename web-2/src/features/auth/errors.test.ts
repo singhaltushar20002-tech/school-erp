@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import bn from "../../../messages/bn.json"
 import en from "../../../messages/en.json"
+import hi from "../../../messages/hi.json"
 
 import {
   authErrorKey,
@@ -45,7 +45,7 @@ describe("authErrorKey", () => {
     ]
     for (const key of keys) {
       expect(en.authErrors[key]).toBeTruthy()
-      expect(bn.authErrors[key]).toBeTruthy()
+      expect(hi.authErrors[key]).toBeTruthy()
     }
   })
 })
@@ -70,16 +70,16 @@ describe("authErrorMessage", () => {
       "en"
     )
     expect(message).toBe(
-      "Too many wrong passwords. You can try again after 25/10/2026 10:15 AM."
+      "Too many wrong passwords. You can try again after 25/10/2026 9:45 AM."
     )
   })
 
-  it("uses Bangla digits in Bangla", () => {
+  it("writes the time in Hindi", () => {
     const message = authErrorMessage(
-      translator(bn.authErrors),
+      translator(hi.authErrors),
       { code: "ACCOUNT_LOCKED", lockedUntil: "2026-10-25T04:15:00.000Z" },
-      "bn"
+      "hi"
     )
-    expect(message).toContain("২৫/১০/২০২৬")
+    expect(message).toContain("25/10/2026")
   })
 })

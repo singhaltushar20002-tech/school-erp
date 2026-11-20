@@ -11,7 +11,7 @@ export interface Collection {
   to: string
   payments: number
   total: number
-  /** `cash`, `cheque`, `card`, `bank_slip` → amount. */
+  /** `cash`, `cheque`, `card`, `bank_slip`, `upi`, `bank_transfer` → amount. */
   byChannel: Record<string, number>
 }
 
@@ -91,7 +91,8 @@ export interface TeacherDashboard {
   }[]
 }
 
-export type PaymentChannel = "cash" | "cheque" | "card" | "bank_slip"
+export type PaymentChannel =
+  "cash" | "cheque" | "card" | "bank_slip" | "upi" | "bank_transfer"
 
 /** `GET /dashboards/accountant` (`dashboard_accountant:read`). */
 export interface AccountantDashboard {

@@ -17,6 +17,8 @@ export enum DiscountCode {
   MERIT = 'merit',
   STAFF_CHILD = 'staff_child',
   FREEDOM_FIGHTER = 'freedom_fighter',
+  /** India: Right to Education seat (usually a full waiver). */
+  RTE = 'rte',
   CUSTOM = 'custom',
 }
 
@@ -62,6 +64,8 @@ export enum PaymentChannel {
   CHEQUE = 'cheque',
   CARD = 'card',
   BANK_SLIP = 'bank_slip',
+  UPI = 'upi',
+  BANK_TRANSFER = 'bank_transfer',
 }
 
 export enum PaymentStatus {

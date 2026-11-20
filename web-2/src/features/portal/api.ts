@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query"
 
 import type { AttendanceTally } from "~/features/dashboard/api"
+import type { FeeStatement } from "~/features/students/api"
 import { apiFetch } from "~/lib/api/client"
 
 // The guardian and student portal (backend/src/modules/portal/). Every
@@ -131,4 +132,169 @@ export function selectedChild(
   requested: string | null | undefined
 ): PortalChild | null {
   return children.find((c) => c.studentId === requested) ?? children[0] ?? null
+}
+
+// --- Child pages: attendance, leave, results, fees, notices -------------
+
+export interface AttendanceDay {
+  date: string
+  status: string
+  label: string
+  countsAs: CountsAs
+}
+
+export interface AttendanceMonth {
+  from: string
+  to: string
+  days: AttendanceDay[]
+}
+
+export interface PortalLeave {
+  id: string
+  fromDate: string
+  toDate: string
+  reason: string
+  status: "pending" | "approved" | "rejected" | "cancelled"
+  decisionNote: string | null
+  createdAt: string
+}
+
+export interface PortalResultSummary {
+  id: string
+  name: string
+  grade: string | null
+  passed: boolean | null
+  positionClass: number | null
+  positionSection: number | null
+  publishedAt: string | null
+}
+
+export interface PortalResult {
+  id: string
+  /** The student's name. */
+  name: string
+  total: number | null
+  fullMarks: number | null
+  percentage: number | null
+  grade: string | null
+  passed: boolean | null
+  positionSection: number | null
+  positionClass: number | null
+  remarks: string | null
+  subjects: {
+    classSubjectId: string
+    subjectName: string
+    marks: number | null
+    fullMarks: number
+    grade: string | null
+    passed: boolean | null
+    absent: boolean
+  }[]
+}
+
+export interface PortalPayment {
+  id: string
+  amount: number
+  channel: string
+  receivedAt: string
+  receiptId: string | null
+  receiptNumber: string | null
+  receiptStatus: "valid" | "cancelled" | null
+}
+
+const child = (id: string) => `/portal/children/${encodeURIComponent(id)}`
+
+export const childKeys = {
+  attendance: (id: string, month: string) =>
+    ["portal", "children", id, "attendance", month] as const,
+  leaves: (id: string) => ["portal", "children", id, "leave"] as const,
+  results: (id: string) => ["portal", "children", id, "results"] as const,
+  result: (id: string, resultId: string) =>
+    ["portal", "children", id, "results", resultId] as const,
+  fees: (id: string) => ["portal", "children", id, "fees"] as const,
+  payments: ["portal", "payments"] as const,
+  notices: ["portal", "notices"] as const,
+}
+
+export const attendanceMonthQuery = (id: string, month: string) =>
+  queryOptions({
+    queryKey: childKeys.attendance(id, month),
+    queryFn: ({ signal }) =>
+      apiFetch<AttendanceMonth>(`${child(id)}/attendance`, {
+        signal,
+        query: { month },
+      }),
+  })
+
+export const childLeavesQuery = (id: string) =>
+  queryOptions({
+    queryKey: childKeys.leaves(id),
+    queryFn: ({ signal }) =>
+      apiFetch<PortalLeave[]>(`${child(id)}/leave`, { signal }),
+  })
+
+export const applyLeave = (
+  id: string,
+  body: { fromDate: string; toDate?: string; reason: string }
+) => apiFetch<PortalLeave>(`${child(id)}/leave`, { method: "POST", body })
+
+export const childResultsQuery = (id: string) =>
+  queryOptions({
+    queryKey: childKeys.results(id),
+    queryFn: ({ signal }) =>
+      apiFetch<{ blocked: boolean; results: PortalResultSummary[] }>(
+        `${child(id)}/results`,
+        { signal }
+      ),
+  })
+
+export const childResultQuery = (id: string, resultId: string) =>
+  queryOptions({
+    queryKey: childKeys.result(id, resultId),
+    queryFn: ({ signal }) =>
+      apiFetch<PortalResult>(`${child(id)}/results/${resultId}`, { signal }),
+  })
+
+/** The report card PDF's link; 404 `NO_REPORT_CARD` until it is printed. */
+export const reportCardUrl = (id: string, resultId: string) =>
+  apiFetch<{ url: string }>(`${child(id)}/results/${resultId}/report-card`)
+
+export const childFeesQuery = (id: string) =>
+  queryOptions({
+    queryKey: childKeys.fees(id),
+    queryFn: ({ signal }) =>
+      apiFetch<FeeStatement>(`${child(id)}/fees`, { signal }),
+  })
+
+export const portalPaymentsQuery = () =>
+  queryOptions({
+    queryKey: childKeys.payments,
+    queryFn: ({ signal }) =>
+      apiFetch<PortalPayment[]>("/portal/payments", { signal }),
+  })
+
+export const portalNoticesQuery = () =>
+  queryOptions({
+    queryKey: childKeys.notices,
+    queryFn: async ({ signal }) =>
+      apiFetch<PortalNotice[]>("/portal/notices", {
+        signal,
+        query: { limit: 50 },
+      }),
+  })
+
+/** A receipt PDF for the family (a job); resolves with the link. */
+export async function portalReceiptUrl(receiptId: string): Promise<string> {
+  type Job = { id: string; status: string; downloadUrl?: string | null }
+  let job = await apiFetch<Job>(`/portal/receipts/${receiptId}/pdf`, {
+    method: "POST",
+    body: { paper: "A4" },
+  })
+  for (let i = 0; i < 60 && job.status !== "succeeded"; i++) {
+    if (job.status === "failed") throw new Error("PDF failed")
+    await new Promise((r) => setTimeout(r, 1000))
+    job = await apiFetch<Job>(`/jobs/${job.id}`)
+  }
+  if (!job.downloadUrl) throw new Error("PDF not ready")
+  return job.downloadUrl
 }

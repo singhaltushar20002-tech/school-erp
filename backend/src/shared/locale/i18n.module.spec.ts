@@ -46,8 +46,8 @@ describe('AppI18nModule', () => {
 
   it('skips an unsupported x-locale for Accept-Language', async () => {
     await expect(
-      langOf({ 'x-locale': 'fr', 'accept-language': 'bn' }),
-    ).resolves.toEqual({ lang: 'bn' });
+      langOf({ 'x-locale': 'fr', 'accept-language': 'hi' }),
+    ).resolves.toEqual({ lang: 'hi' });
   });
 
   it('falls back to English', async () => {

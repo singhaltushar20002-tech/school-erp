@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import bn from "../../messages/bn.json"
 import en from "../../messages/en.json"
 import hi from "../../messages/hi.json"
 
 import { LOCALES } from "./config"
 
-const catalogs = { en, bn, hi }
+const catalogs = { en, hi }
 
-/** Every leaf key as a dotted path: `common.languages.bn`. */
+/** Every leaf key as a dotted path: `common.languages.hi`. */
 function keys(messages: object, prefix = ""): string[] {
   return Object.entries(messages).flatMap(([key, value]) =>
     value && typeof value === "object"
@@ -22,14 +21,11 @@ describe("message catalogs", () => {
     expect(Object.keys(catalogs).sort()).toEqual([...LOCALES].sort())
   })
 
-  it.each(["bn", "hi"] as const)(
-    "have the same keys in %s and English",
-    (locale) => {
-      expect(keys(catalogs[locale]).sort()).toEqual(keys(en).sort())
-    }
-  )
+  it.each(["hi"] as const)("have the same keys in %s and English", (locale) => {
+    expect(keys(catalogs[locale]).sort()).toEqual(keys(en).sort())
+  })
 
-  it.each(["bn", "hi"] as const)("keep every {placeholder} in %s", (locale) => {
+  it.each(["hi"] as const)("keep every {placeholder} in %s", (locale) => {
     const value = (messages: object, path: string) =>
       path
         .split(".")
@@ -47,12 +43,16 @@ describe("message catalogs", () => {
     }
   })
 
-  it.each(["bn", "hi"] as const)(
+  it.each(["hi"] as const)(
     "translate every English sentence in %s",
     (locale) => {
       // Text that stays Latin on purpose: a language's own name, a school
       // address (slugs are ASCII), sample input.
       const latinOnPurpose = new Set([
+        // UPI is the payment system's own name.
+        "dashboard.finance.channels.upi",
+        "fees.channels.upi",
+        "fees.log.byMode.upi",
         "common.languages.en",
         "findSchool.addressPlaceholder",
         "findSchool.emailPlaceholder",

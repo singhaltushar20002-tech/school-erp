@@ -28,7 +28,6 @@ import { HomeContainer } from "~/features/school-site/components/home-section"
 import { SchoolTheme } from "~/features/school-site/components/school-theme"
 import { getSession } from "~/lib/auth"
 import { homeFor } from "~/lib/auth/home"
-import { toBanglaDigits } from "~/lib/format"
 import { requireSchoolSlug } from "~/lib/tenancy/request-host"
 import { cn } from "~/lib/utils"
 
@@ -58,8 +57,7 @@ export default async function SchoolHomePage() {
   if (!home.enabled) redirect(session ? homeFor(session) : "/login")
   const locale = await getLocale()
   const t = await getTranslations("schoolHome")
-  const digits = (n: number) =>
-    locale === "bn" ? toBanglaDigits(String(n)) : String(n)
+  const digits = (n: number) => String(n)
 
   const name = schoolName(home, locale)
   const about = localized(locale, home.about, home.aboutBn)

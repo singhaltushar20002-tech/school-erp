@@ -1,6 +1,6 @@
 /**
- * Bangladesh government holidays (PRD 6.7), applied per year from
- * onboarding. Only the fixed-date ones are written: the religious holidays
+ * Government holidays per country (PRD 6.7), applied per year from
+ * onboarding for the school's `locale.country`. Only the fixed-date ones are written: the religious holidays
  * follow the lunar calendars, so their dates are announced each year and
  * the school adds them by hand (the apply step lists them).
  *
@@ -10,7 +10,7 @@ export type HolidayTemplateType = 'public' | 'school' | 'religious';
 
 export interface FixedHolidayTemplate {
   name: string;
-  nameBn: string;
+  nameBn?: string;
   type: HolidayTemplateType;
   /** 1–12. */
   month: number;
@@ -19,7 +19,7 @@ export interface FixedHolidayTemplate {
 
 export interface MovableHolidayTemplate {
   name: string;
-  nameBn: string;
+  nameBn?: string;
   type: HolidayTemplateType;
 }
 
@@ -79,3 +79,46 @@ export const BD_MOVABLE_HOLIDAYS: MovableHolidayTemplate[] = [
     type: 'religious',
   },
 ];
+
+/**
+ * India: the three national holidays plus the fixed-date gazetted ones.
+ * Festivals follow lunar calendars and vary by state, so they are listed
+ * for the school to date each year.
+ */
+export const IN_FIXED_HOLIDAYS: FixedHolidayTemplate[] = [
+  { name: 'Republic Day', type: 'public', month: 1, day: 26 },
+  { name: 'Dr. B. R. Ambedkar Jayanti', type: 'public', month: 4, day: 14 },
+  { name: 'Independence Day', type: 'public', month: 8, day: 15 },
+  { name: 'Gandhi Jayanti', type: 'public', month: 10, day: 2 },
+  { name: 'Christmas Day', type: 'religious', month: 12, day: 25 },
+];
+
+/** India: dates change every year (and by state); the school adds them. */
+export const IN_MOVABLE_HOLIDAYS: MovableHolidayTemplate[] = [
+  { name: 'Maha Shivaratri', type: 'religious' },
+  { name: 'Holi', type: 'religious' },
+  { name: 'Id-ul-Fitr', type: 'religious' },
+  { name: 'Ram Navami', type: 'religious' },
+  { name: 'Mahavir Jayanti', type: 'religious' },
+  { name: 'Good Friday', type: 'religious' },
+  { name: 'Buddha Purnima', type: 'religious' },
+  { name: 'Id-ul-Zuha (Bakrid)', type: 'religious' },
+  { name: 'Muharram', type: 'religious' },
+  { name: 'Janmashtami', type: 'religious' },
+  { name: 'Milad-un-Nabi', type: 'religious' },
+  { name: 'Dussehra', type: 'religious' },
+  { name: 'Diwali', type: 'religious' },
+  { name: 'Guru Nanak Jayanti', type: 'religious' },
+];
+
+export interface HolidayTemplate {
+  code: string;
+  fixed: FixedHolidayTemplate[];
+  movable: MovableHolidayTemplate[];
+}
+
+/** The holiday template for a school's country. */
+export const HOLIDAY_TEMPLATES: Record<'IN' | 'BD', HolidayTemplate> = {
+  IN: { code: 'in', fixed: IN_FIXED_HOLIDAYS, movable: IN_MOVABLE_HOLIDAYS },
+  BD: { code: 'bd', fixed: BD_FIXED_HOLIDAYS, movable: BD_MOVABLE_HOLIDAYS },
+};

@@ -6,11 +6,12 @@ import {
   IsISO4217CurrencyCode,
   IsTimeZone,
 } from 'class-validator';
-import { DATE_FORMATS, WEEKDAYS } from '../settings.types';
-import type { DateFormat, Weekday } from '../settings.types';
+import { COUNTRIES, DATE_FORMATS, WEEKDAYS } from '../settings.types';
+import type { Country, DateFormat, Weekday } from '../settings.types';
 import { LOCALES, type Locale } from '~/shared/locale/locales';
 
 export class UpdateLocaleSettingsDto {
+  @IsIn(COUNTRIES) country?: Country;
   @IsIn(LOCALES) language?: Locale;
   @IsIn(DATE_FORMATS) dateFormat?: DateFormat;
   @IsIn(['bn', 'en']) numerals?: 'bn' | 'en';

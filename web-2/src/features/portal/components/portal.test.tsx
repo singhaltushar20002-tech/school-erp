@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event"
 import { NextIntlClientProvider } from "next-intl"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import bn from "../../../../messages/bn.json"
 import en from "../../../../messages/en.json"
 import {
   portalKeys,
@@ -40,8 +39,8 @@ const DISPLAY: DisplaySettings = {
     language: "en",
     dateFormat: "DD/MM/YYYY",
     numerals: "en",
-    currency: "BDT",
-    timeZone: "Asia/Dhaka",
+    currency: "INR",
+    timeZone: "Asia/Kolkata",
     weekStart: "saturday",
     weekendDays: ["friday"],
   },
@@ -159,7 +158,7 @@ function backend() {
   })
 }
 
-function renderPortal(children: PortalChild[], locale: "en" | "bn" = "en") {
+function renderPortal(children: PortalChild[]) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
@@ -170,11 +169,7 @@ function renderPortal(children: PortalChild[], locale: "en" | "bn" = "en") {
   client.setQueryData(portalKeys.children, children)
   return render(
     <QueryClientProvider client={client}>
-      <NextIntlClientProvider
-        locale={locale}
-        messages={locale === "bn" ? bn : en}
-        timeZone="Asia/Dhaka"
-      >
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Kolkata">
         <PortalShell schoolName="Acme School" user={session.user}>
           <ChildHome />
         </PortalShell>
@@ -228,7 +223,7 @@ describe("PortalShell and ChildHome", () => {
     expect(screen.getByText("Present")).toBeTruthy()
     expect(screen.getByText("91.7%")).toBeTruthy()
     expect(screen.getByText("Present 108 of 120 days")).toBeTruthy()
-    expect(screen.getByText("৳1,500")).toBeTruthy()
+    expect(screen.getByText("₹1,500")).toBeTruthy()
     expect(screen.getByText("Half-yearly")).toBeTruthy()
     expect(screen.getByText("Sports day")).toBeTruthy()
 
@@ -303,13 +298,5 @@ describe("PortalShell and ChildHome", () => {
       String(url).endsWith("/api/portal/handoff")
     )
     expect(JSON.parse(String(call?.[1]?.body))).toEqual({ orgId: "org-2" })
-  })
-
-  it("reads in Bangla", async () => {
-    renderPortal([RAFI], "bn")
-    expect(await screen.findByText("উপস্থিত")).toBeTruthy()
-    expect(screen.getByText("৯১.৭%")).toBeTruthy()
-    expect(screen.getByText("৳১,৫০০")).toBeTruthy()
-    expect(screen.getAllByText("একমি স্কুল").length).toBeGreaterThan(0)
   })
 })

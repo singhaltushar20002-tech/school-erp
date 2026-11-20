@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event"
 import { NextIntlClientProvider } from "next-intl"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import bn from "../../../../messages/bn.json"
 import en from "../../../../messages/en.json"
+import hi from "../../../../messages/hi.json"
 import type { FormState } from "~/lib/forms/form-state"
 
 import { ActivateForm } from "./activate-form"
@@ -22,11 +22,11 @@ const { signIn, activate, resetPassword } = vi.hoisted(() => ({
 // The real actions are server code; the forms only need their answers.
 vi.mock("../actions", () => ({ signIn, activate, resetPassword }))
 
-function renderIn(ui: React.ReactNode, locale: "en" | "bn" = "en") {
+function renderIn(ui: React.ReactNode, locale: "en" | "hi" = "en") {
   return render(
     <NextIntlClientProvider
       locale={locale}
-      messages={locale === "bn" ? bn : en}
+      messages={locale === "hi" ? hi : en}
       timeZone="Asia/Dhaka"
     >
       {ui}
@@ -93,7 +93,7 @@ describe("LoginForm", () => {
     await submitLogin()
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "You can try again after 25/10/2026 10:15 AM."
+      "You can try again after 25/10/2026 9:45 AM."
     )
   })
 
@@ -163,16 +163,16 @@ describe("LoginForm", () => {
     expect(screen.queryByText("Continue with Google")).not.toBeInTheDocument()
   })
 
-  it("speaks Bangla", async () => {
+  it("speaks Hindi", async () => {
     signIn.mockResolvedValue({ status: "error", code: "INVALID_CREDENTIALS" })
-    renderIn(loginForm(), "bn")
+    renderIn(loginForm(), "hi")
 
-    await userEvent.type(screen.getByLabelText("ইমেইল বা ফোন"), "x@y.test")
-    await userEvent.type(screen.getByLabelText("পাসওয়ার্ড"), "secret")
-    await userEvent.click(screen.getByRole("button", { name: "সাইন ইন" }))
+    await userEvent.type(screen.getByLabelText("ईमेल या फ़ोन"), "x@y.test")
+    await userEvent.type(screen.getByLabelText("पासवर्ड"), "secret")
+    await userEvent.click(screen.getByRole("button", { name: "साइन इन" }))
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "এই ইমেইল বা ফোন নম্বর ও পাসওয়ার্ডের সাথে"
+      "यह ईमेल या फ़ोन नंबर और पासवर्ड"
     )
   })
 })
@@ -362,14 +362,14 @@ describe("ResetPasswordForm", () => {
     expect(action).not.toHaveBeenCalled()
   })
 
-  it("shows the Bangla placeholders", () => {
+  it("shows the Hindi placeholders", () => {
     renderIn(
       <ResetPasswordForm token="tok" account={null} action={vi.fn<Action>()} />,
-      "bn"
+      "hi"
     )
-    expect(screen.getByLabelText("নতুন পাসওয়ার্ড")).toHaveAttribute(
+    expect(screen.getByLabelText("नया पासवर्ड")).toHaveAttribute(
       "placeholder",
-      "নতুন পাসওয়ার্ড লিখুন"
+      "नया पासवर्ड दर्ज करें"
     )
   })
 })

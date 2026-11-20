@@ -5,7 +5,6 @@ import { useState } from "react"
 
 import { Button } from "~/components/ui/button"
 import { Card } from "~/components/ui/card"
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group"
 import { cn } from "~/lib/utils"
 
 type Status = "present" | "late" | "absent"
@@ -48,14 +47,14 @@ const COPY = {
 }
 
 const STUDENTS: { en: string; bn: string; initial: Status }[] = [
-  { en: "Afsana Akter", bn: "আফসানা আক্তার", initial: "present" },
-  { en: "Arif Hossain", bn: "আরিফ হোসেন", initial: "late" },
-  { en: "Farhana Islam", bn: "ফারহানা ইসলাম", initial: "late" },
-  { en: "Imran Kabir", bn: "ইমরান কবির", initial: "present" },
-  { en: "Mehjabin Rahman", bn: "মেহজাবিন রহমান", initial: "present" },
-  { en: "Nafis Chowdhury", bn: "নাফিস চৌধুরী", initial: "present" },
-  { en: "Rafi Ahmed", bn: "রাফি আহমেদ", initial: "absent" },
-  { en: "Sadia Sultana", bn: "সাদিয়া সুলতানা", initial: "present" },
+  { en: "Aditi Verma", bn: "আফসানা আক্তার", initial: "present" },
+  { en: "Arjun Singh", bn: "আরিফ হোসেন", initial: "late" },
+  { en: "Fatima Khan", bn: "ফারহানা ইসলাম", initial: "late" },
+  { en: "Ishaan Gupta", bn: "ইমরান কবির", initial: "present" },
+  { en: "Meera Nair", bn: "মেহজাবিন রহমান", initial: "present" },
+  { en: "Nikhil Reddy", bn: "নাফিস চৌধুরী", initial: "present" },
+  { en: "Rohan Mehta", bn: "রাফি আহমেদ", initial: "absent" },
+  { en: "Sana Iqbal", bn: "সাদিয়া সুলতানা", initial: "present" },
 ]
 
 // Rolls 9 to 42 are off-screen and all present.
@@ -68,7 +67,7 @@ function num(n: number, lang: Lang) {
 }
 
 export function AttendanceDemo() {
-  const [lang, setLang] = useState<Lang>("en")
+  const lang: Lang = "en"
   const [statuses, setStatuses] = useState(() => STUDENTS.map((s) => s.initial))
   const [saved, setSaved] = useState(false)
 
@@ -95,18 +94,6 @@ export function AttendanceDemo() {
             <p className="font-semibold">{copy.title}</p>
             <p className="text-sm text-muted-foreground">{copy.subtitle}</p>
           </div>
-          <ToggleGroup
-            variant="outline"
-            size="sm"
-            value={[lang]}
-            onValueChange={(value) => value[0] && setLang(value[0] as Lang)}
-            aria-label="Language"
-          >
-            <ToggleGroupItem value="en">English</ToggleGroupItem>
-            <ToggleGroupItem value="bn" className="font-bangla">
-              বাংলা
-            </ToggleGroupItem>
-          </ToggleGroup>
         </div>
         <p className="px-5 pt-4 text-sm text-muted-foreground">{copy.hint}</p>
         <ul className="px-2 py-2">
@@ -155,8 +142,8 @@ export function AttendanceDemo() {
           <BellIcon className="size-3.5" />
           Guardian app · SMS
         </p>
-        <p className="mt-1.5 font-bangla text-sm leading-relaxed">
-          আজ রাফি স্কুলে অনুপস্থিত। কারণ জানাতে উত্তর দিন।
+        <p className="mt-1.5 text-sm leading-relaxed">
+          Rohan is absent from school today. Reply to tell us why.
         </p>
         <p className="mt-1.5 text-xs opacity-70">
           Sent automatically at 9:15 AM
@@ -168,7 +155,7 @@ export function AttendanceDemo() {
           <ReceiptTextIcon className="size-4" />
         </span>
         <div className="text-sm">
-          <p className="font-semibold">৳4,020 received</p>
+          <p className="font-semibold">₹4,020 received</p>
           <p className="text-muted-foreground">Receipt 004817</p>
         </div>
       </div>

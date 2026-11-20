@@ -112,8 +112,16 @@ it("nextSectionName follows the letters already used", () => {
   expect(nextSectionName(["Rose"])).toBe("")
 })
 
-it("sessionPresets offers the calendar year and the July–June year today is in", () => {
+it("sessionPresets offers the April–March, calendar and July–June years today is in", () => {
   expect(sessionPresets("2026-03-10")).toEqual([
+    {
+      key: "april",
+      dates: {
+        name: "2025–2026",
+        startDate: "2025-04-01",
+        endDate: "2026-03-31",
+      },
+    },
     {
       key: "calendar",
       dates: { name: "2026", startDate: "2026-01-01", endDate: "2026-12-31" },
@@ -127,7 +135,8 @@ it("sessionPresets offers the calendar year and the July–June year today is in
       },
     },
   ])
-  expect(sessionPresets("2026-07-01")[1]!.dates.startDate).toBe("2026-07-01")
+  expect(sessionPresets("2026-07-01")[2]!.dates.startDate).toBe("2026-07-01")
+  expect(sessionPresets("2026-04-01")[0]!.dates.startDate).toBe("2026-04-01")
 })
 
 it("sessionMonthOrder starts the year at the session's first month", () => {
@@ -150,10 +159,11 @@ it("sessionMonths and sessionYears describe a session", () => {
   expect(sessionYears("2026-01-01", "2026-12-31")).toEqual([2026])
 })
 
-it("defaultSession spans the school's calendar year", () => {
+it("defaultSession spans the April–March year today is in", () => {
   expect(defaultSession("2026-10-25")).toEqual({
-    name: "2026",
-    startDate: "2026-01-01",
-    endDate: "2026-12-31",
+    name: "2026–2027",
+    startDate: "2026-04-01",
+    endDate: "2027-03-31",
   })
+  expect(defaultSession("2027-02-10").startDate).toBe("2026-04-01")
 })

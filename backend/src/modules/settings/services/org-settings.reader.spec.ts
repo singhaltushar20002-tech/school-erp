@@ -23,7 +23,7 @@ describe('OrgSettingsReader', () => {
     findOne.mockResolvedValue({ security: { sessionIdleMinutes: 30 } });
 
     expect((await reader.get('org-1')).security.sessionIdleMinutes).toBe(30);
-    expect((await reader.get('org-1')).locale.timeZone).toBe('Asia/Dhaka');
+    expect((await reader.get('org-1')).locale.timeZone).toBe('Asia/Kolkata');
 
     expect(connections.getScopedConnection).toHaveBeenCalledTimes(1);
     expect(connections.getScopedConnection).toHaveBeenCalledWith('org-1');

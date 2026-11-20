@@ -209,9 +209,9 @@ export const applyFeeHeadsTemplate = () =>
     }
   )
 
-/** Bangladesh's fixed-date holidays for `year` (default: this year). */
+/** The fixed-date holidays of the school's country for `year` (default: this year). */
 export const applyBdHolidays = (year?: number) =>
-  apiFetch<HolidayApplyResult>("/onboarding/templates/holidays/bd/apply", {
+  apiFetch<HolidayApplyResult>("/onboarding/templates/holidays/apply", {
     method: "POST",
     body: year ? { year } : {},
   })

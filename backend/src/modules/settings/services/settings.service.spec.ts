@@ -105,7 +105,7 @@ describe('SettingsService', () => {
     it('hands out frozen values that callers cannot change', async () => {
       const values = await service.get();
       expect(() => {
-        values.locale.language = 'bn';
+        values.locale.language = 'hi';
       }).toThrow(TypeError);
     });
 

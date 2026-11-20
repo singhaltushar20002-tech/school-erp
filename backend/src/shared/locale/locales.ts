@@ -3,7 +3,7 @@
  * `src/i18n/config.ts`). Each has a folder of translations under
  * `src/i18n/<locale>/` (nestjs-i18n) and its notification defaults.
  */
-export const LOCALES = ['en', 'bn', 'hi'] as const;
+export const LOCALES = ['en', 'hi'] as const;
 
 export type Locale = (typeof LOCALES)[number];
 

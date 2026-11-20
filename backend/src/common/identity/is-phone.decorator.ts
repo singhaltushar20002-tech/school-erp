@@ -1,7 +1,7 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
 import { normalizePhone } from './identifier';
 
-/** A phone number `normalizePhone` accepts (BD local or E.164). */
+/** A phone number `normalizePhone` accepts (Indian or BD local, or E.164). */
 export function IsPhone(options?: ValidationOptions) {
   return (object: object, propertyName: string) =>
     registerDecorator({
@@ -9,7 +9,7 @@ export function IsPhone(options?: ValidationOptions) {
       target: object.constructor,
       propertyName,
       options: {
-        message: `${propertyName} must be a valid phone number (e.g. 01712345678 or +8801712345678)`,
+        message: `${propertyName} must be a valid phone number (e.g. 9876543210 or +919876543210)`,
         ...options,
       },
       validator: {

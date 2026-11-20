@@ -9,7 +9,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from "lucide-react"
-import { useLocale, useTranslations } from "next-intl"
+import { useTranslations } from "next-intl"
 import { useId, useState, type FormEvent } from "react"
 
 import {
@@ -54,7 +54,7 @@ import { useSetupAction } from "../use-setup-action"
 /** Today as `YYYY-MM-DD` in the school's time zone. */
 export function schoolToday(timeZone: string | undefined) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: timeZone ?? "Asia/Dhaka",
+    timeZone: timeZone ?? "Asia/Kolkata",
   }).format(new Date())
 }
 
@@ -394,7 +394,7 @@ function ChoiceCard({
 }
 
 /**
- * Bangladesh's fixed-date government holidays that fall in the session,
+ * The country's fixed-date government holidays that fall in the session,
  * ticked when the school has them, added in one go (per calendar year,
  * idempotent). The moon-dated ones are named for adding by hand.
  */
@@ -410,13 +410,11 @@ function Holidays({
   templates: OnboardingTemplates
 }) {
   const t = useTranslations("onboarding.session")
-  const locale = useLocale()
   const f = useSchoolFormat()
   const [showList, setShowList] = useState(false)
   const listId = useId()
   const existing = useQuery(holidaysQuery(startDate, endDate))
-  const nameOf = (h: { name: string; nameBn: string }) =>
-    locale === "bn" ? h.nameBn : h.name
+  const nameOf = (h: { name: string; nameBn: string }) => h.name
 
   const years = sessionYears(startDate, endDate)
   const apply = useSetupAction({
@@ -616,10 +614,9 @@ function HolidayRow({
   listKey: QueryKey
 }) {
   const t = useTranslations("onboarding.session")
-  const locale = useLocale()
   const f = useSchoolFormat()
   const [editing, setEditing] = useState(false)
-  const name = (locale === "bn" && holiday.nameBn) || holiday.name
+  const name = holiday.name
   const update = useSetupAction({
     action: (values: HolidayInput) => updateHoliday(holiday.id, values),
     invalidate: [listKey],

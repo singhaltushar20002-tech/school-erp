@@ -47,6 +47,16 @@ export type StudentPatch = Partial<
   >
 >;
 
+/** A student's class, section and roll in one session (list rows). */
+export interface StudentPlacement {
+  classId: string;
+  className: string;
+  classLevel: number | null;
+  sectionId: string;
+  sectionName: string;
+  rollNo: string | null;
+}
+
 /**
  * Students. The search reads `student_enrollments` and the guardian
  * tables in `EXISTS` subqueries (read-only, by table name): placement and
@@ -80,6 +90,41 @@ export class StudentRepository extends BaseTenantRepository<Student> {
   async updateFields(id: string, patch: StudentPatch): Promise<void> {
     if (Object.values(patch).every((v) => v === undefined)) return;
     await this.repo.update({ id }, patch);
+  }
+
+  /**
+   * Where each student sits in a session: class, section and roll, for
+   * lists (one query for the page). Students with no enrollment that
+   * session are left out.
+   */
+  async placements(
+    studentIds: string[],
+    academicYearId: string,
+  ): Promise<Map<string, StudentPlacement>> {
+    if (!studentIds.length) return new Map();
+    const rows = await this.repo
+      .createQueryBuilder('s')
+      .select('s.id', 'studentId')
+      .addSelect('e.class_id', 'classId')
+      .addSelect('c.name', 'className')
+      .addSelect('c.level', 'classLevel')
+      .addSelect('e.section_id', 'sectionId')
+      .addSelect('sec.name', 'sectionName')
+      .addSelect('e.roll_no', 'rollNo')
+      .innerJoin(
+        'student_enrollments',
+        'e',
+        'e.student_id = s.id AND e.org_id = s.org_id AND e.academic_year_id = :academicYearId',
+        { academicYearId },
+      )
+      .innerJoin('classes', 'c', 'c.id = e.class_id')
+      .innerJoin('sections', 'sec', 'sec.id = e.section_id')
+      .where('s.org_id = :orgId AND s.id IN (:...studentIds)', {
+        orgId: this.orgId,
+        studentIds,
+      })
+      .getRawMany<StudentPlacement & { studentId: string }>();
+    return new Map(rows.map(({ studentId, ...p }) => [studentId, p]));
   }
 
   /** Whether the student is enrolled in one of the sections. */

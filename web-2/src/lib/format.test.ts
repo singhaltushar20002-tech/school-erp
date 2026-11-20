@@ -31,31 +31,31 @@ describe("toBanglaDigits", () => {
 })
 
 describe("formatMoney", () => {
-  it("reads minor units with lakh grouping and the taka sign", () => {
-    expect(formatMoney(123456750)).toBe("৳12,34,567.50")
-    expect(formatMoney(5)).toBe("৳0.05")
-    expect(formatMoney(0)).toBe("৳0.00")
+  it("reads minor units with lakh grouping and the rupee sign", () => {
+    expect(formatMoney(123456750)).toBe("₹12,34,567.50")
+    expect(formatMoney(5)).toBe("₹0.05")
+    expect(formatMoney(0)).toBe("₹0.00")
   })
 
   it("puts the minus sign before the currency sign", () => {
-    expect(formatMoney(-150000)).toBe("-৳1,500.00")
+    expect(formatMoney(-150000)).toBe("-₹1,500.00")
   })
 
   it("uses Bangla digits when the school does", () => {
-    expect(formatMoney(10000000, { numerals: "bn" })).toBe("৳১,০০,০০০.০০")
+    expect(formatMoney(10000000, { numerals: "bn" })).toBe("₹১,০০,০০০.০০")
   })
 
   it("supports thousand grouping, no symbol and trimmed fractions", () => {
     expect(formatMoney(123456700, { grouping: "thousand" })).toBe(
-      "৳1,234,567.00"
+      "₹1,234,567.00"
     )
     expect(formatMoney(150000, { symbol: false })).toBe("1,500.00")
-    expect(formatMoney(150000, { trimZeroFraction: true })).toBe("৳1,500")
-    expect(formatMoney(150050, { trimZeroFraction: true })).toBe("৳1,500.50")
+    expect(formatMoney(150000, { trimZeroFraction: true })).toBe("₹1,500")
+    expect(formatMoney(150050, { trimZeroFraction: true })).toBe("₹1,500.50")
   })
 
-  it("rounds stray fractions of a poisha", () => {
-    expect(formatMoney(100.6)).toBe("৳1.01")
+  it("rounds stray fractions of a paisa", () => {
+    expect(formatMoney(100.6)).toBe("₹1.01")
   })
 
   it("gives an empty string for missing values", () => {
@@ -88,8 +88,8 @@ describe("formatDate", () => {
     )
   })
 
-  it("converts timestamps to the school time zone (Asia/Dhaka by default)", () => {
-    // 20:30 UTC is 02:30 the next day in Dhaka (UTC+6).
+  it("converts timestamps to the school time zone (Asia/Kolkata by default)", () => {
+    // 20:30 UTC is 02:00 the next day in India (UTC+5:30).
     expect(formatDate("2026-10-24T20:30:00Z")).toBe("25/10/2026")
     expect(formatDate("2026-10-24T20:30:00Z", { timeZone: "UTC" })).toBe(
       "24/10/2026"
@@ -124,7 +124,7 @@ describe("formatDate", () => {
 
 describe("formatDateTime", () => {
   it("shows the time in the school time zone", () => {
-    expect(formatDateTime("2026-10-24T09:05:00Z")).toBe("24/10/2026 3:05 PM")
+    expect(formatDateTime("2026-10-24T09:05:00Z")).toBe("24/10/2026 2:35 PM")
   })
 })
 
@@ -133,10 +133,10 @@ describe("dateOptionsFor", () => {
     const at = "2026-10-25T04:15:00.000Z"
     const pattern = { format: "D MMM YYYY" } as const
     expect(formatDateTime(at, { ...pattern, ...dateOptionsFor("en") })).toBe(
-      "25 Oct 2026 10:15 AM"
+      "25 Oct 2026 9:45 AM"
     )
     expect(formatDateTime(at, { ...pattern, ...dateOptionsFor("hi") })).toBe(
-      "25 अक्टू 2026 10:15 पूर्वाह्न"
+      "25 अक्टू 2026 9:45 पूर्वाह्न"
     )
     expect(
       formatDateTime(at, { ...pattern, ...dateOptionsFor("bn") })

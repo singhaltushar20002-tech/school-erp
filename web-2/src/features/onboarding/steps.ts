@@ -88,8 +88,22 @@ export interface SessionDates {
   endDate: string
 }
 
-/** A session spanning this calendar year, the usual case in Bangladesh. */
+/**
+ * The April to March session today falls in, the usual case in India
+ * (CBSE, ICSE and most state boards).
+ */
 export function defaultSession(today: string): SessionDates {
+  const year = Number(today.slice(0, 4))
+  const april = Number(today.slice(5, 7)) >= 4 ? year : year - 1
+  return {
+    name: `${april}–${april + 1}`,
+    startDate: `${april}-04-01`,
+    endDate: `${april + 1}-03-31`,
+  }
+}
+
+/** This calendar year, January to December. */
+function calendarSession(today: string): SessionDates {
   const year = today.slice(0, 4)
   return {
     name: year,
@@ -98,11 +112,12 @@ export function defaultSession(today: string): SessionDates {
   }
 }
 
-export type SessionPreset = "calendar" | "july"
+export type SessionPreset = "april" | "calendar" | "july"
 
 /**
- * The usual school years around today: January to December (most schools
- * in Bangladesh) and the July to June year that today falls in.
+ * The usual school years around today: April to March (most schools in
+ * India), January to December, and the July to June year that today falls
+ * in.
  */
 export function sessionPresets(
   today: string
@@ -110,7 +125,8 @@ export function sessionPresets(
   const year = Number(today.slice(0, 4))
   const july = Number(today.slice(5, 7)) >= 7 ? year : year - 1
   return [
-    { key: "calendar", dates: defaultSession(today) },
+    { key: "april", dates: defaultSession(today) },
+    { key: "calendar", dates: calendarSession(today) },
     {
       key: "july",
       dates: {

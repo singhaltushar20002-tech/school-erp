@@ -119,14 +119,15 @@ export class OnboardingController {
   }
 
   /**
-   * Adds Bangladesh's fixed-date government holidays for a year
-   * (idempotent) and lists the moon-dependent ones to add by hand.
+   * Adds the fixed-date government holidays of the school's country for a
+   * year (idempotent) and lists the moon-dependent ones to add by hand.
+   * `holidays/bd/apply` is the old path, kept for existing clients.
    */
-  @Post('templates/holidays/bd/apply')
+  @Post(['templates/holidays/apply', 'templates/holidays/bd/apply'])
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.ONBOARDING_MANAGE)
   @ResponseMessage('Template applied')
   applyHolidays(@Body() dto: ApplyHolidayTemplateDto) {
-    return this.holidays.applyBdTemplate(dto.year);
+    return this.holidays.applyTemplate(dto.year);
   }
 }

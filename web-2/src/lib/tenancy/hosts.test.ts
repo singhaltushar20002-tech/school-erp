@@ -75,6 +75,28 @@ describe("classifyHost", () => {
   })
 })
 
+describe("classifyHost with the localhost alias", () => {
+  const dev = { ...config, localhostAlias: true }
+
+  it("serves schools and the admin app on *.localhost", () => {
+    expect(classifyHost("greenfield.localhost:3000", dev)).toEqual({
+      kind: "school",
+      hostname: "greenfield.localhost",
+      slug: "greenfield",
+    })
+    expect(classifyHost("admin.localhost:3000", dev).kind).toBe("admin")
+    expect(classifyHost("localhost:3000", dev).kind).toBe("site")
+  })
+
+  it("keeps the root domain working", () => {
+    expect(classifyHost("greenfield.lvh.me", dev).kind).toBe("school")
+  })
+
+  it("is off without the flag (production)", () => {
+    expect(classifyHost("greenfield.localhost", config).kind).toBe("custom")
+  })
+})
+
 describe("urlOnHost", () => {
   it("keeps the protocol and port of the current origin", () => {
     expect(urlOnHost("http://acme.lvh.me:3000", "lvh.me", "/find-school")).toBe(

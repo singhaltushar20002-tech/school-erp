@@ -6,7 +6,7 @@ import { hi } from "date-fns/locale/hi"
 /**
  * Numbers, money and dates as people read them (PRD 6.24, 8.6): Bangla or
  * Western digits by the school's `locale.numerals`, South Asian grouping
- * (lakh, crore) for BDT, and dates in the school's time zone and format.
+ * (lakh, crore) for INR, and dates in the school's time zone and format.
  *
  * Mirrors `backend/src/shared/locale/format.ts`, so screens and PDFs agree.
  * Done by hand rather than with `Intl` because `bn-BD` output differs
@@ -19,7 +19,7 @@ export type Numerals = "bn" | "en"
 export type DateFormat =
   "DD/MM/YYYY" | "DD-MM-YYYY" | "YYYY-MM-DD" | "D MMM YYYY"
 
-export const DEFAULT_TIME_ZONE = "Asia/Dhaka"
+export const DEFAULT_TIME_ZONE = "Asia/Kolkata"
 export const DEFAULT_DATE_FORMAT: DateFormat = "DD/MM/YYYY"
 
 /**
@@ -67,15 +67,29 @@ const group = (integer: string, grouping: Grouping) =>
 export interface MoneyOptions {
   numerals?: Numerals
   grouping?: Grouping
-  /** Prefix `৳` (the default) or nothing. */
+  /** Prefix the currency symbol (the default) or nothing. */
   symbol?: boolean
+  /** ISO 4217 code of the school's currency (default INR). */
+  currency?: string
   /** Drop `.00` for whole amounts (tiles); off by default (tables). */
   trimZeroFraction?: boolean
 }
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: "₹",
+  BDT: "৳",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+}
+
+/** The symbol for a currency code, else the code and a space. */
+export const currencySymbol = (currency = "INR") =>
+  CURRENCY_SYMBOLS[currency] ?? `${currency} `
+
 /**
- * Minor units (poisha, as the API sends them) as money:
- * `123456750` → `৳12,34,567.50`.
+ * Minor units (paise, as the API sends them) as money:
+ * `123456750` → `₹12,34,567.50`.
  */
 export function formatMoney(
   minor: number | null | undefined,
@@ -93,7 +107,8 @@ export function formatMoney(
     options.trimZeroFraction && fraction === "00"
       ? integer
       : `${integer}.${fraction}`
-  const symbol = (options.symbol ?? true) ? "৳" : ""
+  const symbol =
+    (options.symbol ?? true) ? currencySymbol(options.currency) : ""
   return digits(
     `${negative ? "-" : ""}${symbol}${amount}`,
     options.numerals ?? "en"
@@ -138,7 +153,7 @@ export interface DateOptions {
 /**
  * A calendar date. Date-only strings (`2026-10-24`) are business dates and
  * are shown as written, never shifted by a time zone; timestamps are shown
- * as the date in `timeZone` (Asia/Dhaka by default).
+ * as the date in `timeZone` (Asia/Kolkata by default).
  */
 export function formatDate(
   value: string | Date | null | undefined,
@@ -147,6 +162,21 @@ export function formatDate(
   const date = toZonedDate(value, options.timeZone)
   if (!date) return ""
   return render(date, PATTERNS[options.format ?? DEFAULT_DATE_FORMAT], options)
+}
+
+/** Today as `YYYY-MM-DD` in `timeZone` (business dates). */
+export function todayIn(timeZone: string = DEFAULT_TIME_ZONE): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date())
+}
+
+/** A billing period (`2026-11`) as its month and year: `Nov 2026`. */
+export function formatMonth(
+  period: string | null | undefined,
+  options: Omit<DateOptions, "format" | "timeZone"> = {}
+): string {
+  if (!period || !/^\d{4}-\d{2}$/.test(period)) return period ?? ""
+  const date = toZonedDate(`${period}-01`)
+  return date ? render(date, "MMM yyyy", options) : period
 }
 
 /** A timestamp as date and time (`24/10/2026 3:05 PM`) in `timeZone`. */

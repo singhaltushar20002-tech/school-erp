@@ -12,9 +12,9 @@ export const siteConfig = {
   title: `${BRAND.name}, school management software`,
   titleTemplate: `%s | ${BRAND.name}`,
   description:
-    "Attendance, results, fees and notices on one mobile-first platform, in English, Bangla and Hindi.",
+    "Attendance, results, fees and notices on one mobile-first platform, in English and Hindi.",
   /** One line under the logo in the marketing footer. */
-  tagline: "School management in English, Bangla and Hindi.",
+  tagline: "School management in English and Hindi.",
   keywords: [
     "school management software",
     "school ERP",
@@ -23,9 +23,7 @@ export const siteConfig = {
     "school fees",
     "student portal",
     "guardian app",
-    "Bangla",
     "Hindi",
-    "স্কুল ম্যানেজমেন্ট সফটওয়্যার",
     "स्कूल प्रबंधन सॉफ़्टवेयर",
   ],
   /**
@@ -33,8 +31,8 @@ export const siteConfig = {
    * absolute metadata URLs. School hosts are `<slug>.<rootDomain>`.
    */
   siteUrl: appConfig.appUrl,
-  /** Open Graph locales: English first, Bangla and Hindi as alternates. */
+  /** Open Graph locales: English first, Hindi as the alternate. */
   locale: "en_BD",
-  alternateLocale: ["bn_BD", "hi_IN"],
+  alternateLocale: ["hi_IN"],
   contactEmail: BRAND.contactEmail,
 } as const

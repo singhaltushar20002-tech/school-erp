@@ -8,6 +8,7 @@ import {
   formatDate,
   formatDateTime,
   formatMoney,
+  formatMonth,
   formatNumber,
   type DateFormat,
   type MoneyOptions,
@@ -22,23 +23,28 @@ import {
 export function useSchoolFormat() {
   const locale = useLocale()
   const { data } = useQuery(displaySettingsQuery())
-  const numerals: Numerals = locale === "bn" ? "bn" : "en"
-  const language = locale === "bn" || locale === "hi" ? locale : "en"
+  const numerals: Numerals = "en"
+  const language = locale === "hi" ? "hi" : "en"
   const timeZone = data?.locale.timeZone
   const dateFormat: DateFormat | undefined = data?.locale.dateFormat
+  const currency = data?.locale.currency
 
   return {
     numerals,
+    /** ISO 4217 code of the school's money (INR by default). */
+    currency: currency ?? "INR",
     money: (minor: number, options: MoneyOptions = {}) =>
-      formatMoney(minor, { numerals, ...options }),
-    /** Whole taka, no `.00`: for tiles. */
+      formatMoney(minor, { numerals, currency, ...options }),
+    /** Whole rupees, no `.00`: for tiles. */
     moneyShort: (minor: number) =>
-      formatMoney(minor, { numerals, trimZeroFraction: true }),
+      formatMoney(minor, { numerals, currency, trimZeroFraction: true }),
     number: (value: number) => formatNumber(value, { numerals }),
     /** A year or code: digits only, no grouping. */
     plain: (value: number) =>
       formatNumber(value, { numerals, grouping: "none" }),
     percent: (value: number) => `${formatNumber(value, { numerals })}%`,
+    /** A billing period (`2026-11`): `Nov 2026`. */
+    month: (period: string) => formatMonth(period, { numerals, language }),
     /** `D MMM YYYY` for headings and lists (month names read better). */
     date: (value: string) =>
       formatDate(value, { timeZone, format: "D MMM YYYY", numerals, language }),

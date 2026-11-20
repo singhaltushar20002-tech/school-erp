@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event"
 import { NextIntlClientProvider } from "next-intl"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import bn from "../../../../messages/bn.json"
 import en from "../../../../messages/en.json"
 import { authKeys, type Me } from "~/features/auth/api"
 import type {
@@ -26,8 +25,8 @@ const DISPLAY: DisplaySettings = {
     language: "en",
     dateFormat: "DD/MM/YYYY",
     numerals: "en",
-    currency: "BDT",
-    timeZone: "Asia/Dhaka",
+    currency: "INR",
+    timeZone: "Asia/Kolkata",
     weekStart: "saturday",
     weekendDays: ["friday"],
   },
@@ -219,7 +218,7 @@ function backend(failing: string[] = []) {
   })
 }
 
-function renderHome(member: Me, locale: "en" | "bn" = "en") {
+function renderHome(member: Me) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
@@ -227,11 +226,7 @@ function renderHome(member: Me, locale: "en" | "bn" = "en") {
   client.setQueryData(settingsKeys.display, DISPLAY)
   return render(
     <QueryClientProvider client={client}>
-      <NextIntlClientProvider
-        locale={locale}
-        messages={locale === "bn" ? bn : en}
-        timeZone="Asia/Dhaka"
-      >
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Kolkata">
         <HomeDashboard />
       </NextIntlClientProvider>
     </QueryClientProvider>
@@ -279,7 +274,7 @@ describe("HomeDashboard", () => {
     renderHome(me(["dashboard_admin:read", "dashboard_accountant:read"]))
 
     const overview = section("School overview")
-    expect(await within(overview).findByText("৳1,23,456")).toBeTruthy()
+    expect(await within(overview).findByText("₹1,23,456")).toBeTruthy()
     // The tile and the Class 6 bar.
     expect(within(overview).getAllByText("92%")).toHaveLength(2)
     expect(within(overview).getByText("3 of 4 registers in")).toBeTruthy()
@@ -288,8 +283,8 @@ describe("HomeDashboard", () => {
 
     const finance = section("Finance")
     expect(await within(finance).findByText("Rafi Ahmed")).toBeTruthy()
-    expect(within(finance).getByText("৳2,500.00")).toBeTruthy()
-    expect(within(finance).getByText("৳750")).toBeTruthy()
+    expect(within(finance).getByText("₹2,500.00")).toBeTruthy()
+    expect(within(finance).getByText("₹750")).toBeTruthy()
 
     expect(screen.queryByRole("region", { name: "My day" })).toBeNull()
     expect(fetchMock).not.toHaveBeenCalledWith(
@@ -321,7 +316,7 @@ describe("HomeDashboard", () => {
     await userEvent.click(
       within(overview).getByRole("button", { name: "Try again" })
     )
-    expect(await within(overview).findByText("৳1,23,456")).toBeTruthy()
+    expect(await within(overview).findByText("₹1,23,456")).toBeTruthy()
   })
 
   it("links a teacher to the registers and mark sheets still to do", async () => {
@@ -362,12 +357,5 @@ describe("HomeDashboard", () => {
     expect(await screen.findByText("Students")).toBeTruthy()
     expect(screen.queryByRole("region", { name: "School overview" })).toBeNull()
     expect(fetchMock).not.toHaveBeenCalled()
-  })
-
-  it("uses Bangla digits for a Bangla reader", async () => {
-    renderHome(me(["dashboard_accountant:read"]), "bn")
-    const finance = section("হিসাব")
-    expect(await within(finance).findByText("৳২,৫০০.০০")).toBeTruthy()
-    expect(within(finance).getByText("৳৭৫০")).toBeTruthy()
   })
 })

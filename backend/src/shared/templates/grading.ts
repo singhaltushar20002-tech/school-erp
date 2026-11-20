@@ -124,7 +124,7 @@ export const CAMBRIDGE_TEMPLATE: GradingTemplate = {
 /** Percentage with divisions (pass 33% per subject). */
 export const PERCENTAGE_DIVISION_TEMPLATE: GradingTemplate = {
   code: 'percentage-division',
-  name: 'Percentage and division',
+  name: 'Percentage and division (ICSE, state boards)',
   description:
     '33% passes a subject; First division 60%, Second 45%, Third 33% overall.',
   kind: 'percentage',
@@ -157,7 +157,39 @@ export const ALIA_MADRASA_TEMPLATE: GradingTemplate = {
   rules: BD_RULES,
 };
 
+/**
+ * CBSE nine-point scale (classes 1–10): grade by percentage, the grade
+ * point ranks students, 33% passes a subject and E fails it.
+ */
+export const CBSE_TEMPLATE: GradingTemplate = {
+  code: 'cbse',
+  name: 'CBSE (A1–E)',
+  description:
+    'CBSE nine-point scale: A1 91–100 down to D 33–40, E below 33% fails the subject.',
+  kind: 'letter',
+  scale: 10,
+  bands: [
+    band('A1', 91, 100, 10),
+    band('A2', 81, 90, 9),
+    band('B1', 71, 80, 8),
+    band('B2', 61, 70, 7),
+    band('C1', 51, 60, 6),
+    band('C2', 41, 50, 5),
+    band('D', 33, 40, 4),
+    band('E', 0, 32, 0, true),
+  ],
+  rules: {
+    ...BD_RULES,
+    markRounding: 'nearest',
+    componentPass: false,
+    fourthSubject: { enabled: false, threshold: 0 },
+    gpaCap: null,
+    failGrade: 'E',
+  },
+};
+
 export const GRADING_TEMPLATES: GradingTemplate[] = [
+  CBSE_TEMPLATE,
   BD_GPA_5_TEMPLATE,
   GPA_4_TEMPLATE,
   CAMBRIDGE_TEMPLATE,

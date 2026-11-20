@@ -13,7 +13,7 @@ const POINTS = [
     icon: LanguagesIcon,
     title: (
       <>
-        English, <span className="font-bangla">বাংলা</span> and{" "}
+        English and{" "}
         <span lang="hi" className="font-[family-name:var(--font-devanagari)]">
           हिन्दी
         </span>
@@ -26,7 +26,7 @@ const POINTS = [
     icon: FileCheckIcon,
     title: "Board rules, built in",
     key: "board",
-    body: "Board-exam GPA scales, the optional-subject bonus and per-component pass marks, with Cambridge and madrasa scales available.",
+    body: "CBSE grades, ICSE and state-board percentages and per-component pass marks, with your own scales if you need them.",
   },
   {
     icon: BanknoteIcon,
@@ -55,11 +55,8 @@ export function MadeForYourSchool() {
             cards in your own language or fees in your own currency. This one
             was.
           </SectionIntro>
-          <p
-            lang="bn"
-            className="font-bangla text-5xl leading-tight font-extrabold text-primary [font-stretch:80%] sm:text-6xl"
-          >
-            আপনার স্কুল, আপনার ভাষায়।
+          <p className="text-5xl leading-tight font-extrabold text-primary [font-stretch:80%] sm:text-6xl">
+            Your school, in your language.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

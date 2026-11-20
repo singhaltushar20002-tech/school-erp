@@ -9,11 +9,10 @@ import { MAX_PAGE_SIZE } from '~/common/dto/pagination-query.dto';
 import { TENANT_DATASOURCE } from '~/tenancy/tenancy.constants';
 import { TenantDataSourceProxy } from '~/tenancy/tenant-datasource.proxy';
 import {
-  BD_FIXED_HOLIDAYS,
-  BD_MOVABLE_HOLIDAYS,
   CURRICULUM_TEMPLATES,
-  DEFAULT_FEE_HEADS,
+  FEE_HEAD_TEMPLATES,
   GRADING_TEMPLATES,
+  HOLIDAY_TEMPLATES,
   type CurriculumTemplate,
   type TemplateClass,
 } from '~/shared/templates';
@@ -21,6 +20,7 @@ import { AuditService } from '~/modules/audit/services/audit.service';
 import { AUDIT_ACTIONS } from '~/modules/audit/audit-actions';
 import { AcademicYearService } from '~/modules/academic-years/academic-year.service';
 import { ClassService } from '~/modules/classes/class.service';
+import { SettingsService } from '~/modules/settings/services/settings.service';
 import { StudentService } from '~/modules/students/services/student.service';
 import { OrganizationService } from '~/modules/organizations/services/organization.service';
 import { ClassSubjectType } from '~/modules/class-curriculum/enums/class-subject-type.enum';
@@ -111,11 +111,13 @@ export class CurriculumTemplateService {
     private readonly audit: AuditService,
     private readonly organizations: OrganizationService,
     private readonly students: StudentService,
+    private readonly settings: SettingsService,
     @Inject(TENANT_DATASOURCE) private readonly ds: TenantDataSourceProxy,
   ) {}
 
   /** What onboarding can offer, and the curriculum template in use. */
   async list() {
+    const { country } = await this.settings.getSection('locale');
     return {
       curriculumInUse: await this.organizations.getCurriculumTemplate(
         this.ds.orgId,
@@ -130,13 +132,8 @@ export class CurriculumTemplateService {
         groups: t.groups.map((g) => g.name),
       })),
       grading: GRADING_TEMPLATES.map((t) => ({ ...t, applicable: true })),
-      feeHeads: { items: DEFAULT_FEE_HEADS, applicable: true },
-      holidays: {
-        code: 'bd',
-        fixed: BD_FIXED_HOLIDAYS,
-        movable: BD_MOVABLE_HOLIDAYS,
-        applicable: true,
-      },
+      feeHeads: { items: FEE_HEAD_TEMPLATES[country], applicable: true },
+      holidays: { ...HOLIDAY_TEMPLATES[country], applicable: true },
     };
   }
 

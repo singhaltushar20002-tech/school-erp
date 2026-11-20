@@ -50,10 +50,11 @@ export class CreateGuardianDto {
   @Min(0)
   income?: number;
 
-  /** Bangladesh NID: 10, 13 or 17 digits. Stored encrypted. */
+  /** Aadhaar (12 digits) or Bangladesh NID (10, 13 or 17). Stored encrypted. */
   @IsOptional()
-  @Matches(/^(\d{10}|\d{13}|\d{17})$/, {
-    message: 'nid must be 10, 13 or 17 digits',
+  @Matches(/^(\d{10}|\d{12}|\d{13}|\d{17})$/, {
+    message:
+      'nid must be 12 digits (Aadhaar) or 10, 13 or 17 digits (Bangladesh NID)',
   })
   nid?: string;
 }
