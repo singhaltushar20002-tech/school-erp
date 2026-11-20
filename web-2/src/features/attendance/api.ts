@@ -135,3 +135,26 @@ export const monthlyRegisterQuery = (sectionId: string, month: string) =>
         query: { sectionId, month },
       }),
   })
+
+export interface RegisterCorrection {
+  id: string
+  date: string
+  studentName: string
+  rollNo: string | null
+  oldStatus: string
+  newStatus: string
+  reason: string
+  source: string
+  changedByName: string | null
+  changedAt: string
+}
+
+export const registerCorrectionsQuery = (sectionId: string, month: string) =>
+  queryOptions({
+    queryKey: ["attendance", "corrections", sectionId, month] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<RegisterCorrection[]>("/attendance/reports/corrections", {
+        signal,
+        query: { sectionId, month },
+      }),
+  })

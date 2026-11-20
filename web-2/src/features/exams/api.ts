@@ -67,6 +67,7 @@ export interface MarkGrid {
 
 export interface ResultDefinition {
   id: string
+  academicYearId: string
   classId: string
   schoolClass: { id: string; name: string; level: number | null }
   name: string
@@ -151,7 +152,8 @@ export const publishResults = (definitionId: string) =>
 /** Prints a section's report cards (a job); resolves with the PDF link. */
 export async function printReportCards(
   definitionId: string,
-  sectionId: string
+  sectionId: string,
+  language?: "en" | "hi"
 ): Promise<string> {
   type Job = {
     id: string
@@ -163,7 +165,7 @@ export async function printReportCards(
     `/result-definitions/${definitionId}/report-cards`,
     {
       method: "POST",
-      body: { sectionId },
+      body: { sectionId, ...(language ? { language } : {}) },
     }
   )
   for (let i = 0; i < 120 && job.status !== "succeeded"; i++) {
@@ -174,3 +176,154 @@ export async function printReportCards(
   if (!job.downloadUrl) throw new Error("not ready")
   return job.downloadUrl
 }
+
+// Grading systems and which class uses which (the report card follows).
+
+export interface GradingSystem {
+  id: string
+  name: string
+  kind: "gpa" | "letter" | "percentage"
+  templateCode: string | null
+  isDefault: boolean
+  items: { letter: string; minPercent: number; maxPercent: number }[]
+}
+
+export interface GradingTemplate {
+  code: string
+  name: string
+  description: string
+}
+
+export interface ClassGrading {
+  id: string
+  academicYearId: string
+  classId: string
+  gradingSystemId: string
+}
+
+export type ReportCardFormat = "cbse" | "icse" | "state" | "standard"
+
+/** Mirrors the backend's `reportCardFormat`. */
+export const reportCardFormat = (
+  templateCode: string | null | undefined
+): ReportCardFormat =>
+  templateCode === "cbse"
+    ? "cbse"
+    : templateCode === "icse"
+      ? "icse"
+      : templateCode === "up-board" || templateCode === "percentage-division"
+        ? "state"
+        : "standard"
+
+/** The templates an Indian school picks from. */
+export const INDIA_TEMPLATES = ["cbse", "icse", "up-board", "cambridge"]
+
+export const gradingKeys = {
+  all: ["grading"] as const,
+  systems: ["grading", "systems"] as const,
+  templates: ["grading", "templates"] as const,
+  classes: (yearId: string) => ["grading", "classes", yearId] as const,
+}
+
+export const gradingSystemsQuery = () =>
+  queryOptions({
+    queryKey: gradingKeys.systems,
+    queryFn: ({ signal }) =>
+      apiFetch<GradingSystem[]>("/grading-systems", { signal }),
+  })
+
+export const gradingTemplatesQuery = () =>
+  queryOptions({
+    queryKey: gradingKeys.templates,
+    queryFn: ({ signal }) =>
+      apiFetch<GradingTemplate[]>("/grading-systems/templates", { signal }),
+  })
+
+export const classGradingQuery = (academicYearId: string) =>
+  queryOptions({
+    queryKey: gradingKeys.classes(academicYearId),
+    queryFn: ({ signal }) =>
+      apiFetch<ClassGrading[]>("/class-grading", {
+        signal,
+        query: { academicYearId },
+      }),
+  })
+
+export const addGradingFromTemplate = (code: string) =>
+  apiFetch<GradingSystem>(`/grading-systems/templates/${code}`, {
+    method: "POST",
+    body: {},
+  })
+
+export const makeDefaultGrading = (id: string) =>
+  apiFetch<GradingSystem>(`/grading-systems/${id}`, {
+    method: "PATCH",
+    body: { isDefault: true },
+  })
+
+export const setClassGrading = (body: {
+  academicYearId: string
+  classId: string
+  gradingSystemId: string
+}) => apiFetch<ClassGrading>("/class-grading", { method: "PUT", body })
+
+export const clearClassGrading = (id: string) =>
+  apiFetch<void>(`/class-grading/${id}`, { method: "DELETE" })
+
+// Report card entry: remarks and co-scholastic grades per student.
+
+export const CO_SCHOLASTIC = [
+  "work_education",
+  "art_education",
+  "health_physical",
+  "discipline",
+] as const
+export type CoScholasticArea = (typeof CO_SCHOLASTIC)[number]
+
+export interface ResultRow {
+  id: string
+  enrollmentId: string
+  name: string
+  rollNo: string | null
+  sectionId: string
+  sectionName: string
+  total: number
+  fullMarks: number
+  percentage: number
+  grade: string
+  passed: boolean
+  remarks: string | null
+  coScholastic: Partial<Record<CoScholasticArea, string>> | null
+}
+
+export const allDefinitionsQuery = () =>
+  queryOptions({
+    queryKey: ["exams", "definitions", "all"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<ResultDefinition[]>("/result-definitions", { signal }),
+  })
+
+export const resultRowsQuery = (definitionId: string, sectionId: string) =>
+  queryOptions({
+    queryKey: ["exams", "results", definitionId, sectionId] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<ResultRow[]>(`/result-definitions/${definitionId}/results`, {
+        signal,
+        query: { sectionId },
+      }),
+  })
+
+export const saveRemarks = (resultId: string, remarks: string) =>
+  apiFetch<ResultRow>(`/results/${resultId}/remarks`, {
+    method: "PUT",
+    body: { remarks },
+  })
+
+export const saveCoScholastic = (
+  resultId: string,
+  grades: Partial<Record<CoScholasticArea, string>>
+) =>
+  apiFetch<ResultRow>(`/results/${resultId}/co-scholastic`, {
+    method: "PUT",
+    body: grades,
+  })

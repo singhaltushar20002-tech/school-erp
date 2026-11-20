@@ -58,6 +58,15 @@ export class AttendanceReportController {
     return this.reports.monthly(query.sectionId, query.month);
   }
 
+  /** Changes to the section's register during the month, newest first. */
+  @Get('corrections')
+  @RequirePermissions(PERMISSIONS.ATTENDANCE_READ)
+  @ResponseMessage('Attendance corrections')
+  async corrections(@Query() query: MonthlyRegisterQueryDto) {
+    await this.assertSection(query.sectionId);
+    return this.reports.corrections(query.sectionId, query.month);
+  }
+
   /** The same register as a PDF in the paper layout; poll `GET /jobs/:id`. */
   @Post('monthly-register')
   @HttpCode(HttpStatus.ACCEPTED)

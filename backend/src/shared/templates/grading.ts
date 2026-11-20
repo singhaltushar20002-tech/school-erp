@@ -188,8 +188,53 @@ export const CBSE_TEMPLATE: GradingTemplate = {
   },
 };
 
+/**
+ * ICSE (CISCE) schools: marks and percentage on the card, with the
+ * school's letter grade by band; 33% passes a subject.
+ */
+export const ICSE_TEMPLATE: GradingTemplate = {
+  code: 'icse',
+  name: 'ICSE (percentage and grade)',
+  description:
+    'Marks and percentage with letter grades: A+ 90–100 down to D 33–39, E below 33% fails the subject.',
+  kind: 'letter',
+  scale: 0,
+  bands: [
+    band('A+', 90, 100, 0),
+    band('A', 80, 89, 0),
+    band('B+', 70, 79, 0),
+    band('B', 60, 69, 0),
+    band('C+', 50, 59, 0),
+    band('C', 40, 49, 0),
+    band('D', 33, 39, 0),
+    band('E', 0, 32, 0, true),
+  ],
+  rules: {
+    ...BD_RULES,
+    markRounding: 'nearest',
+    componentPass: false,
+    fourthSubject: { enabled: false, threshold: 0 },
+    gpaCap: null,
+    failGrade: 'E',
+  },
+};
+
+/**
+ * UP Board (UPMSP): marks and percentage with divisions; 33% passes a
+ * subject, First division from 60%, Second from 45%, Third from 33%.
+ */
+export const UP_BOARD_TEMPLATE: GradingTemplate = {
+  ...PERCENTAGE_DIVISION_TEMPLATE,
+  code: 'up-board',
+  name: 'UP Board (percentage and division)',
+  description:
+    'UPMSP rules: 33% passes a subject; First division 60%, Second 45%, Third 33% overall.',
+};
+
 export const GRADING_TEMPLATES: GradingTemplate[] = [
   CBSE_TEMPLATE,
+  ICSE_TEMPLATE,
+  UP_BOARD_TEMPLATE,
   BD_GPA_5_TEMPLATE,
   GPA_4_TEMPLATE,
   CAMBRIDGE_TEMPLATE,

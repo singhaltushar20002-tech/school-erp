@@ -14,7 +14,7 @@ import { RequirePermissions } from '~/modules/rbac/decorators/require-permission
 import { PermissionsGuard } from '~/modules/rbac/guards/permissions.guard';
 import { PERMISSIONS } from '~/modules/rbac/permissions.catalog';
 import { AccessScope } from '~/modules/access-scope/access-scope.service';
-import { RemarksDto } from '../dto/result.dto';
+import { CoScholasticDto, RemarksDto } from '../dto/result.dto';
 import { ResultService } from '../services/result.service';
 
 /** One student's result. */
@@ -54,6 +54,21 @@ export class ResultController {
     return this.results.setRemarks(
       id,
       dto.remarks,
+      await this.scope.homeSections(PERMISSIONS.RESULTS_REMARKS),
+    );
+  }
+
+  /** Co-scholastic grades for the board report card (class teacher). */
+  @Put(':id/co-scholastic')
+  @RequirePermissions(PERMISSIONS.RESULTS_REMARKS)
+  @ResponseMessage('Co-scholastic grades saved')
+  async coScholastic(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CoScholasticDto,
+  ) {
+    return this.results.setCoScholastic(
+      id,
+      { ...dto },
       await this.scope.homeSections(PERMISSIONS.RESULTS_REMARKS),
     );
   }

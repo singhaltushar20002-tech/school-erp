@@ -10,6 +10,7 @@ import {
   UsersIcon,
   WalletIcon,
 } from "lucide-react"
+import Link from "next/link"
 import { useTranslations } from "next-intl"
 
 import {
@@ -116,6 +117,8 @@ function Overview({ data }: { data: AdminDashboard }) {
           value={f.number(data.staff.active)}
         />
       </StatGrid>
+
+      <Attention data={data} />
 
       <div className="grid gap-3 lg:grid-cols-2">
         <WidgetCard
@@ -230,6 +233,97 @@ function Overview({ data }: { data: AdminDashboard }) {
           )}
         </WidgetCard>
       </div>
+    </div>
+  )
+}
+
+/** The principal's morning: who is absent, who owes, who just joined. */
+function Attention({ data }: { data: AdminDashboard }) {
+  const t = useTranslations("dashboard.attention")
+  const f = useSchoolFormat()
+  const absent = data.absentToday
+  const owing = data.defaulters
+  const joined = data.admissions
+  if (!absent && !owing && !joined) return null
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      {absent && (
+        <WidgetCard
+          title={t("absentTitle", { n: f.number(absent.count) })}
+          description={t("absentHint")}
+        >
+          {absent.count === 0 ? (
+            <Empty>{t("absentNone")}</Empty>
+          ) : (
+            <ul className="flex max-h-56 flex-col divide-y overflow-y-auto text-sm">
+              {absent.students.map((s) => (
+                <li key={s.studentId} className="flex gap-2 py-1.5">
+                  <Link
+                    href={`/dashboard/students/${s.studentId}`}
+                    className="min-w-0 flex-1 truncate font-medium hover:underline"
+                  >
+                    {s.name}
+                  </Link>
+                  <span className="text-muted-foreground">
+                    {s.className} {s.sectionName}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {absent.count > absent.students.length && (
+            <p className="pt-2 text-xs text-muted-foreground">
+              {t("more", {
+                n: f.number(absent.count - absent.students.length),
+              })}
+            </p>
+          )}
+        </WidgetCard>
+      )}
+      {owing && (
+        <WidgetCard
+          title={t("defaultersTitle", { n: f.number(owing.students) })}
+          description={t("defaultersHint")}
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-sm">
+              {t("over60", { n: f.number(owing.over60) })}
+            </p>
+            <Link
+              href="/dashboard/fees/dues"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t("openDues")}
+            </Link>
+          </div>
+        </WidgetCard>
+      )}
+      {joined && (
+        <WidgetCard
+          title={t("admissionsTitle", { n: f.number(joined.count) })}
+          description={t("admissionsHint", { from: f.date(joined.from) })}
+        >
+          {joined.count === 0 ? (
+            <Empty>{t("admissionsNone")}</Empty>
+          ) : (
+            <ul className="flex max-h-56 flex-col divide-y overflow-y-auto text-sm">
+              {joined.students.map((s) => (
+                <li key={s.studentId} className="flex gap-2 py-1.5">
+                  <Link
+                    href={`/dashboard/students/${s.studentId}`}
+                    className="min-w-0 flex-1 truncate font-medium hover:underline"
+                  >
+                    {s.name}
+                  </Link>
+                  <span className="text-muted-foreground">
+                    {s.className ? `${s.className} ${s.sectionName ?? ""}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </WidgetCard>
+      )}
     </div>
   )
 }

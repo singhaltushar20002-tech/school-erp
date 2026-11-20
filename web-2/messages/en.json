@@ -606,6 +606,19 @@
       "body": "{percentage}% done. A few steps are left before everything works.",
       "progress": "Setup progress",
       "action": "Continue setup"
+    },
+    "attention": {
+      "absentTitle": "Absent today: {n}",
+      "absentHint": "From the registers taken so far.",
+      "absentNone": "No one is marked absent so far.",
+      "more": "and {n} more",
+      "defaultersTitle": "Fee defaulters: {n}",
+      "defaultersHint": "Students with fees past their due date.",
+      "over60": "{n} of them are more than 60 days late.",
+      "openDues": "Open dues and remind parents",
+      "admissionsTitle": "New admissions: {n}",
+      "admissionsHint": "Admitted since {from}.",
+      "admissionsNone": "No new admissions this week."
     }
   },
   "onboarding": {
@@ -1629,7 +1642,20 @@
       "overdue": "Overdue",
       "actions": "Actions",
       "daysLate": "{days} days overdue",
-      "collect": "Collect"
+      "collect": "Collect",
+      "remind": {
+        "button": "Remind {group} ({n})",
+        "title": "Remind parents: {group}",
+        "summary": "{count, plural, one {{n} student owes} other {{n} students owe}} {amount} in all. Each family gets one message with their child's overdue amount.",
+        "preview": "“{name} has {amount} in fees due since {date}. Please pay at the school office or online.”",
+        "channels": "Sent in the parent app and by email; WhatsApp and SMS join once they are set up.",
+        "cancel": "Cancel",
+        "send": "Send to {n}",
+        "sending": "Sending…",
+        "sent": "{count, plural, one {Reminder sent for {n} student} other {Reminders sent for {n} students}}",
+        "sentHint": "Parents receive it within a minute.",
+        "failed": "The reminders could not be sent"
+      }
     },
     "setup": {
       "title": "Fee setup",
@@ -1974,6 +2000,80 @@
     "absent": "Absent",
     "percent": "%",
     "attendedRow": "Attended",
-    "offDay": "Holiday or weekend"
+    "offDay": "Holiday or weekend",
+    "correctionsTitle": "Changes this month",
+    "noCorrections": "No marks were changed after the register was taken.",
+    "correctionDay": "on {date}",
+    "correctionChange": "{from} → {to}",
+    "correctionBy": "“{reason}” · {who}, {when}",
+    "system": "Automatic",
+    "statuses": {
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late",
+      "leave": "Leave",
+      "half_day": "Half day"
+    }
+  },
+  "grading": {
+    "title": "Grading systems",
+    "description": "How marks become grades, and which report card each class prints.",
+    "systemsTitle": "Your grading systems",
+    "systemsHint": "The default system grades every class that isn't given its own below.",
+    "default": "Default",
+    "makeDefault": "Make default",
+    "template": "Grading template",
+    "pickTemplate": "Add a board's system…",
+    "add": "Add",
+    "added": "{name} added",
+    "failed": "The change could not be saved",
+    "formats": {
+      "cbse": "CBSE report card",
+      "icse": "ICSE report card",
+      "state": "State board report card",
+      "standard": "Standard report card"
+    },
+    "classesTitle": "Classes this session",
+    "classesHint": "Pick a system for a class to change its grades and report card layout.",
+    "class": "Class",
+    "system": "Grading system",
+    "reportCard": "Report card",
+    "systemFor": "Grading system for {name}",
+    "useDefault": "School default ({name})",
+    "classSaved": "Class grading saved"
+  },
+  "reportCardEntry": {
+    "title": "Report cards",
+    "description": "Fill in remarks and co-scholastic grades, then print the section's report cards.",
+    "nothing": "No results to work on yet",
+    "nothingBody": "Results appear here once an exam is tabulated.",
+    "result": "Result",
+    "section": "Section",
+    "notTabulated": "This class has no result for that exam yet",
+    "language": "Language",
+    "english": "English",
+    "hindi": "हिन्दी",
+    "print": "Print report cards",
+    "printing": "Preparing…",
+    "printFailed": "The report cards could not be printed",
+    "roll": "Roll",
+    "student": "Student",
+    "score": "Score",
+    "areas": {
+      "work_education": "Work edu.",
+      "art_education": "Art edu.",
+      "health_physical": "Health & PE",
+      "discipline": "Discipline"
+    },
+    "remarks": "Remarks",
+    "gradeFor": "{area} grade for {name}",
+    "remarksFor": "Remarks for {name}",
+    "scaleHint": "Co-scholastic and discipline grades: A Outstanding, B Very good, C Fair. They print on the CBSE report card.",
+    "unsaved": "{count, plural, one {{n} student changed} other {{n} students changed}}",
+    "allSaved": "Everything is saved.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "{count, plural, one {Saved {n} student} other {Saved {n} students}}",
+    "failed": "Some changes could not be saved"
   }
 }

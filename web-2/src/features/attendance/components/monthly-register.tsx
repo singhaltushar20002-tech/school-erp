@@ -25,6 +25,7 @@ import { cn } from "~/lib/utils"
 
 import {
   monthlyRegisterQuery,
+  registerCorrectionsQuery,
   submissionStatusQuery,
   type CountsAs,
   type MonthlyRegister as Register,
@@ -113,6 +114,7 @@ export function MonthlyRegister() {
         </Button>
       </div>
       {sectionId && <RegisterGrid sectionId={sectionId} month={month} />}
+      {sectionId && <Corrections sectionId={sectionId} month={month} />}
     </div>
   )
 }
@@ -266,5 +268,60 @@ function RegisterGrid({
         </li>
       </ul>
     </div>
+  )
+}
+
+const STATUS_KEYS = ["present", "absent", "late", "leave", "half_day"] as const
+const isStatusKey = (c: string): c is (typeof STATUS_KEYS)[number] =>
+  (STATUS_KEYS as readonly string[]).includes(c)
+
+/** Changes made to the month's register after it was first taken. */
+function Corrections({
+  sectionId,
+  month,
+}: {
+  sectionId: string
+  month: string
+}) {
+  const t = useTranslations("attendanceRegister")
+  const f = useSchoolFormat()
+  const list = useQuery(registerCorrectionsQuery(sectionId, month))
+  if (list.isPending || list.isError) return null
+  const label = (code: string) =>
+    isStatusKey(code) ? t(`statuses.${code}`) : code
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="font-display text-lg font-semibold">
+        {t("correctionsTitle")}
+      </h2>
+      {list.data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t("noCorrections")}</p>
+      ) : (
+        <ul className="flex flex-col divide-y rounded-xl border bg-card text-sm">
+          {list.data.map((c) => (
+            <li key={c.id} className="flex flex-col gap-0.5 px-4 py-2.5">
+              <span>
+                <span className="font-medium">{c.studentName}</span>{" "}
+                <span className="text-muted-foreground">
+                  {t("correctionDay", { date: f.date(c.date) })}
+                </span>
+                {" · "}
+                {t("correctionChange", {
+                  from: label(c.oldStatus),
+                  to: label(c.newStatus),
+                })}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t("correctionBy", {
+                  reason: c.reason,
+                  who: c.changedByName ?? t("system"),
+                  when: f.dateTime(c.changedAt),
+                })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }

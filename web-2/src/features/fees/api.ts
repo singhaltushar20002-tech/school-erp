@@ -209,3 +209,10 @@ export const ageGroup = (d: Defaulter, asOf: string): AgeGroup => {
   const days = daysOverdue(d.oldestDueDate, asOf)
   return days <= 30 ? "0-30" : days <= 60 ? "31-60" : "60+"
 }
+
+/** Reminds these students' families about their overdue fees now. */
+export const remindStudents = (studentIds: string[]) =>
+  apiFetch<{ sent: number; skipped: number }>("/fees/reminders", {
+    method: "POST",
+    body: { studentIds },
+  })

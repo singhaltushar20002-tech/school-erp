@@ -31,11 +31,11 @@ export const DEFAULT_TEMPLATES: Record<
   feeDue: {
     en: {
       subject: 'Fees due for {student_name}',
-      body: 'Invoice {invoice_number} for {student_name} has {amount} due since {due_date}.',
+      body: '{student_name} has {amount} in fees due since {due_date}. Please pay at the school office or online.',
     },
     hi: {
       subject: '{student_name} की फ़ीस बकाया है',
-      body: '{student_name} के इनवॉइस {invoice_number} पर {due_date} से {amount} बकाया है।',
+      body: '{student_name} की {due_date} से {amount} फ़ीस बकाया है। कृपया विद्यालय कार्यालय में या ऑनलाइन भुगतान करें।',
     },
   },
   paymentReceived: {

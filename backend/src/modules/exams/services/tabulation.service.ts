@@ -204,6 +204,7 @@ export class TabulationService {
               enrollmentId: g.enrollmentId,
               remarks: null,
               remarksBy: null,
+              coScholastic: null,
               reportCardFileId: null,
               ...fields,
             });

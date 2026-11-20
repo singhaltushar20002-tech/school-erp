@@ -1180,6 +1180,42 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
       [orgId, owner.id],
     );
     log(`  ${days.length} school days`);
+    // A few corrections in Class 5 A this month, made the proper way so the
+    // register shows who changed what and why.
+    const absences = await root.query<
+      { enrollment_id: string; date: string }[]
+    >(
+      `SELECT rec.enrollment_id, to_char(reg.date, 'YYYY-MM-DD') AS date
+         FROM attendance_records rec
+         JOIN attendance_registers reg ON reg.id = rec.register_id
+        WHERE rec.org_id = $1 AND reg.section_id = $2
+          AND rec.status_code = 'absent'
+          AND reg.date >= date_trunc('month', $3::date) AND reg.date < $3::date
+        ORDER BY reg.date DESC
+        LIMIT 3`,
+      [orgId, sectionIds[DEMO_TEACHER_SECTION], today],
+    );
+    const reasons = [
+      'Arrived after roll call; was in the school bus that came late',
+      'Parent sent a medical note the next morning',
+      'Marked absent by mistake; was at the inter-school quiz',
+    ];
+    for (const [i, a] of absences.entries()) {
+      await put(
+        admin,
+        `/attendance/sections/${sectionIds[DEMO_TEACHER_SECTION]}?date=${a.date}`,
+        {
+          records: [
+            {
+              enrollmentId: a.enrollment_id,
+              status: i === 0 ? 'late' : i === 1 ? 'leave' : 'present',
+            },
+          ],
+          reason: reasons[i],
+        },
+      );
+    }
+    log(`  ${absences.length} register corrections`);
   });
 
   // Half-Yearly exam, classes 1–10: marked, approved, tabulated, published.
@@ -1266,6 +1302,33 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     log(
       `  ${sheets.length} mark sheets, ${published} of ${definitions.length} results published`,
     );
+    // The class teachers' co-scholastic grades and remarks, so the CBSE
+    // report cards print complete.
+    await root.query(
+      `UPDATE results r
+          SET co_scholastic = jsonb_build_object(
+                'work_education', (ARRAY['A','A','A','B','B','C'])[1 + floor(random() * 6)::int],
+                'art_education', (ARRAY['A','A','B','B','B','C'])[1 + floor(random() * 6)::int],
+                'health_physical', (ARRAY['A','A','A','B','B','C'])[1 + floor(random() * 6)::int],
+                'discipline', (ARRAY['A','A','A','A','B','C'])[1 + floor(random() * 6)::int]),
+              remarks = CASE
+                WHEN r.percentage >= 85 THEN (ARRAY[
+                  'Excellent work. Keep it up!',
+                  'A sincere and hardworking student.',
+                  'Outstanding performance across subjects.'])[1 + floor(random() * 3)::int]
+                WHEN r.percentage >= 60 THEN (ARRAY[
+                  'Good progress. Can do even better with regular revision.',
+                  'Attentive in class; should practise writing answers.',
+                  'Steady effort. Participates well in class activities.'])[1 + floor(random() * 3)::int]
+                ELSE (ARRAY[
+                  'Needs to give more time to studies at home.',
+                  'Should revise daily and ask doubts in class.',
+                  'Capable of more; please ensure regular homework.'])[1 + floor(random() * 3)::int]
+              END
+         FROM result_definitions d
+        WHERE d.id = r.result_definition_id AND d.org_id = $1 AND r.org_id = $1`,
+      [orgId],
+    );
     // Report cards for the demo family's sections, so the parent can open
     // them on the phone.
     for (const key of ['5:A', '8:B']) {
@@ -1342,6 +1405,29 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     });
     log(`  ${sheets.length} sheets: ${submitted} submitted, ${drafts} drafts`);
   });
+
+  // A handful of this week's admissions for the principal's dashboard.
+  await root.query(
+    `UPDATE students SET admission_date = CURRENT_DATE - (n % 6)::int
+       FROM (SELECT id, row_number() OVER (ORDER BY admission_number DESC) AS n
+               FROM students WHERE org_id = $1 AND deleted_at IS NULL) x
+      WHERE students.id = x.id AND x.n <= 6`,
+    [orgId],
+  );
+
+  // Months of back-dated payments and reminders are history, not news:
+  // mark them sent so parents' feeds (and new reminders) aren't stuck
+  // behind thousands of old events. Today's payments still notify.
+  await root.query(
+    `UPDATE domain_events ev SET processed_at = now()
+      WHERE ev.org_id = $1 AND ev.processed_at IS NULL
+        AND (ev.type = 'fees.due_reminder'
+          OR (ev.type = 'payment.received' AND EXISTS (
+                SELECT 1 FROM receipts r JOIN payments p ON p.id = r.payment_id
+                 WHERE r.id = (ev.payload->>'receiptId')::uuid
+                   AND p.received_on < CURRENT_DATE)))`,
+    [orgId],
+  );
 
   await step('circulars', async () => {
     await post(admin, '/notices', {

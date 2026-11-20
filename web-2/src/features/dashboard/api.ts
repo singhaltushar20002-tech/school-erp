@@ -59,6 +59,31 @@ export interface AdminDashboard {
   collection: { today: Collection; monthToDate: Collection }
   dues: DuesTotals
   staff: { active: number }
+  /** Students with anything overdue, and those over 60 days. */
+  defaulters?: { students: number; over60: number }
+  absentToday?: {
+    count: number
+    students: {
+      studentId: string
+      name: string
+      admissionNumber: string
+      className: string
+      sectionName: string
+      rollNo: string | null
+    }[]
+  }
+  /** Admitted in the last seven days. */
+  admissions?: {
+    from: string
+    count: number
+    students: {
+      studentId: string
+      name: string
+      admissionDate: string
+      className: string | null
+      sectionName: string | null
+    }[]
+  }
   upcoming: {
     kind: "holiday" | "exam"
     title: string

@@ -160,7 +160,7 @@ export interface PortalSettings {
 }
 
 export interface ReportCardSettings {
-  language: 'bn' | 'en';
+  language: 'bn' | 'en' | 'hi';
   showPosition: boolean;
   /** The session's attendance so far (days and percentage). */
   showAttendance: boolean;

@@ -23,7 +23,7 @@ import {
 import { SIGNER_ROLES, type SignerRole } from '../settings.types';
 
 export class UpdateReportCardSettingsDto {
-  @IsIn(['bn', 'en']) language?: 'bn' | 'en';
+  @IsIn(['bn', 'en', 'hi']) language?: 'bn' | 'en' | 'hi';
   @IsBoolean() showPosition?: boolean;
   @IsBoolean() showAttendance?: boolean;
   @IsBoolean() showRemarks?: boolean;

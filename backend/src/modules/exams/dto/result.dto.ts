@@ -93,6 +93,34 @@ export class RemarksDto {
   remarks: string;
 }
 
+/** CBSE co-scholastic areas, graded on a three-point scale. */
+export const CO_SCHOLASTIC_AREAS = [
+  'work_education',
+  'art_education',
+  'health_physical',
+  'discipline',
+] as const;
+export type CoScholasticArea = (typeof CO_SCHOLASTIC_AREAS)[number];
+export const CO_SCHOLASTIC_GRADES = ['A', 'B', 'C', ''] as const;
+
+export class CoScholasticDto {
+  @IsOptional()
+  @IsIn(CO_SCHOLASTIC_GRADES)
+  work_education?: string;
+
+  @IsOptional()
+  @IsIn(CO_SCHOLASTIC_GRADES)
+  art_education?: string;
+
+  @IsOptional()
+  @IsIn(CO_SCHOLASTIC_GRADES)
+  health_physical?: string;
+
+  @IsOptional()
+  @IsIn(CO_SCHOLASTIC_GRADES)
+  discipline?: string;
+}
+
 export class ReportCardsDto {
   @IsDefined()
   @IsUUID('4')
@@ -100,8 +128,8 @@ export class ReportCardsDto {
 
   /** Defaults to `results.reportCard.language`. */
   @IsOptional()
-  @IsIn(['en', 'bn'])
-  language?: 'en' | 'bn';
+  @IsIn(['en', 'hi', 'bn'])
+  language?: 'en' | 'hi' | 'bn';
 }
 
 export class ResultExportDto {
