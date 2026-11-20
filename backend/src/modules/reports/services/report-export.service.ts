@@ -6,6 +6,7 @@ import { AttendanceReportService } from '~/modules/attendance/services/attendanc
 import { AUDIT_ACTIONS } from '~/modules/audit/audit-actions';
 import { AuditService } from '~/modules/audit/services/audit.service';
 import { FeeReportService } from '~/modules/fees/services/fee-report.service';
+import { PaymentService } from '~/modules/fees/services/payment.service';
 import type { Job } from '~/modules/jobs/entities/job.entity';
 import { JobService } from '~/modules/jobs/services/job.service';
 import {
@@ -28,6 +29,7 @@ type Row = Record<string, string | number | null>;
 const PERMISSION: Record<ReportKey, PermissionKey> = {
   'fees.dues': PERMISSIONS.FEES_READ,
   'fees.defaulters': PERMISSIONS.FEES_READ,
+  'fees.receipts': PERMISSIONS.FEES_READ,
   'attendance.defaulters': PERMISSIONS.ATTENDANCE_READ,
   'attendance.late-comers': PERMISSIONS.ATTENDANCE_READ,
 };
@@ -51,6 +53,7 @@ export class ReportExportService {
     private readonly audit: AuditService,
     private readonly feeReports: FeeReportService,
     private readonly attendance: AttendanceReportService,
+    private readonly payments: PaymentService,
   ) {}
 
   async start(dto: ReportExportDto): Promise<Job> {
@@ -83,6 +86,45 @@ export class ReportExportService {
   ): Promise<{ columns: SheetColumn<Row>[]; rows: Row[] }> {
     const p = data.params;
     switch (data.report) {
+      case 'fees.receipts': {
+        // Every receipt in the range (default: everything), oldest first.
+        const rows: Row[] = [];
+        for (let page = 1; ; page++) {
+          const result = await this.payments.findPayments({
+            from: str(p.from),
+            to: str(p.to),
+            page,
+            limit: 100,
+          });
+          for (const pay of result.items) {
+            rows.push({
+              number: pay.receipt?.number ?? null,
+              date: pay.receivedOn,
+              admissionNumber: pay.student?.admissionNumber ?? null,
+              name: pay.student?.fullName ?? null,
+              channel: pay.channel,
+              reference: pay.reference,
+              amount: money(pay.amount),
+              status: pay.receipt?.status ?? pay.status,
+            });
+          }
+          if (page >= result.meta.totalPages) break;
+        }
+        rows.reverse();
+        return {
+          columns: [
+            { key: 'number', header: 'Receipt' },
+            { key: 'date', header: 'Date' },
+            { key: 'admissionNumber', header: 'Student ID' },
+            { key: 'name', header: 'Name', width: 28 },
+            { key: 'channel', header: 'Mode' },
+            { key: 'reference', header: 'Reference', width: 20 },
+            { key: 'amount', header: 'Amount' },
+            { key: 'status', header: 'Status' },
+          ],
+          rows,
+        };
+      }
       case 'fees.dues':
       case 'fees.defaulters': {
         const result =

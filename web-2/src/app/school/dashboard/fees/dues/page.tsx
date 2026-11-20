@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server"
 import { Suspense } from "react"
 
 import { PageHeader } from "~/components/layouts/page-header"
+import { ExportButton } from "~/features/exports/export-button"
 import { DuesReport } from "~/features/fees/components/dues-report"
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,7 +16,13 @@ export default async function Page() {
   const t = await getTranslations("fees.dues")
   return (
     <>
-      <PageHeader title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")} description={t("description")}>
+        <ExportButton
+          path="/reports/exports"
+          body={{ report: "fees.dues" }}
+          permission="fees:read"
+        />
+      </PageHeader>
       <Suspense>
         <DuesReport />
       </Suspense>

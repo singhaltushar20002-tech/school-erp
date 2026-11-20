@@ -750,6 +750,51 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
         });
       }
     }
+    // Every other subject of every section has a subject teacher, so the
+    // exam overview can say whose mark sheet is missing. A teacher keeps one
+    // subject in either the junior (1–5) or senior (6–10) classes.
+    const teachers = (
+      await root.query<{ id: string }[]>(
+        `SELECT id FROM employees
+          WHERE org_id = $1 AND phone LIKE '90060%'
+            AND (email IS NULL OR email <> $2)
+          ORDER BY phone`,
+        [orgId, `teacher@${EMAIL_DOMAIN}`],
+      )
+    ).map((r) => r.id);
+    const classSubjects = await root.query<
+      { id: string; classId: string; name: string }[]
+    >(
+      `SELECT cs.id, cs.class_id AS "classId", s.name
+         FROM class_subjects cs JOIN subjects s ON s.id = cs.subject_id
+        WHERE cs.org_id = $1`,
+      [orgId],
+    );
+    const subjectNames = [...new Set(classSubjects.map((c) => c.name))].sort();
+    const assignments: {
+      sectionId: string;
+      classSubjectId: string;
+      employeeId: string;
+    }[] = [];
+    for (let c = 1; c <= CLASSES; c++) {
+      for (const cs of classSubjects.filter((x) => x.classId === classIds[c])) {
+        for (const s of SECTIONS) {
+          if (c === 5 && cs.name === 'Mathematics') continue;
+          const sectionId = sectionIds[`${c}:${s}`];
+          if (!sectionId) continue;
+          const slot = subjectNames.indexOf(cs.name) * 2 + (c > 5 ? 1 : 0);
+          assignments.push({
+            sectionId,
+            classSubjectId: cs.id,
+            employeeId: teachers[slot % teachers.length],
+          });
+        }
+      }
+    }
+    await pool(assignments, CONCURRENCY, (a) =>
+      post(admin, '/subject-teachers', a),
+    );
+    log(`  ${assignments.length + SECTIONS.length} subject teachers`);
   });
 
   // Fees: class-wise structures, concessions, a late fine.
@@ -1244,6 +1289,58 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
         );
       }
     }
+  });
+
+  // Unit Test 2, still open: most sheets submitted, some saved as drafts,
+  // some not started (the exam in-charge chases those). Class 5 A Maths
+  // is left empty for the class teacher to fill in during the demo.
+  await step('Unit Test 2 (in progress)', async () => {
+    const examId = (
+      await post(admin, '/exams', {
+        academicYearId: ids.year,
+        name: 'Unit Test 2',
+      })
+    ).id;
+    await post(admin, `/exams/${examId}/subjects`, {
+      classIds: Array.from({ length: 10 }, (_, i) => classIds[i + 1]),
+    });
+    await post(admin, `/exams/${examId}/open`);
+    const sheets = await get<
+      (Row & { sectionId: string; subjectName: string })[]
+    >(admin, `/exams/${examId}/mark-sheets`);
+    let submitted = 0;
+    let drafts = 0;
+    await pool(sheets, CONCURRENCY, async (sheet) => {
+      if (
+        sheet.sectionId === sectionIds[DEMO_TEACHER_SECTION] &&
+        sheet.subjectName === 'Mathematics'
+      ) {
+        return;
+      }
+      const x = rand();
+      if (x < 0.15) return; // not started
+      const grid = await get<{
+        subject: { components: { id: string; fullMarks: number }[] };
+        students: { enrollmentId: string }[];
+      }>(admin, `/mark-sheets/${sheet.id}/marks`);
+      const entries = grid.students.flatMap((st) =>
+        grid.subject.components.map((c) => ({
+          enrollmentId: st.enrollmentId,
+          componentId: c.id,
+          value: Math.round(c.fullMarks * (0.5 + rand() * 0.48)),
+        })),
+      );
+      if (entries.length) {
+        await put(admin, `/mark-sheets/${sheet.id}/marks`, { entries });
+      }
+      if (x < 0.3) {
+        drafts++;
+        return; // saved, not submitted
+      }
+      await post(admin, `/mark-sheets/${sheet.id}/submit`);
+      submitted++;
+    });
+    log(`  ${sheets.length} sheets: ${submitted} submitted, ${drafts} drafts`);
   });
 
   await step('circulars', async () => {

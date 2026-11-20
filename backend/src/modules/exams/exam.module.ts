@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { RbacModule } from '~/modules/rbac/rbac.module';
 import { AcademicYearModule } from '~/modules/academic-years/academic-year.module';
 import { AccessScopeModule } from '~/modules/access-scope/access-scope.module';
+import { TeachingModule } from '~/modules/teaching/teaching.module';
 import { AttendanceModule } from '~/modules/attendance/attendance.module';
 import { ClassModule } from '~/modules/classes/class.module';
 import { ClassCurriculumModule } from '~/modules/class-curriculum/class-curriculum.module';
@@ -44,6 +45,7 @@ import { TabulationService } from './services/tabulation.service';
   imports: [
     RbacModule,
     AccessScopeModule,
+    TeachingModule,
     AcademicYearModule,
     TermModule,
     ClassModule,
