@@ -1429,6 +1429,355 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     [orgId],
   );
 
+  // Phase 4: periods and a published timetable for every section, the
+  // term's events, homework in Class 5 A, and admission enquiries.
+  await step('timetable, calendar, homework and enquiries', async () => {
+    const times = [
+      ['08:00', '08:45'],
+      ['08:45', '09:30'],
+      ['09:30', '10:15'],
+      ['10:15', '11:00'],
+      ['11:20', '12:05'],
+      ['12:05', '12:50'],
+      ['12:50', '13:35'],
+    ];
+    const periods = await root.query<{ id: string; display_order: number }[]>(
+      `INSERT INTO periods (org_id, name, start_time, end_time, display_order)
+       SELECT $1, 'Period ' || n, t[1]::time, t[2]::time, n
+         FROM unnest($2::text[]) WITH ORDINALITY AS x(pair, n)
+         CROSS JOIN LATERAL (SELECT string_to_array(pair, '-') AS t) p
+       RETURNING id, display_order`,
+      [orgId, times.map(([a, b]) => `${a}-${b}`)],
+    );
+    periods.sort((a, b) => a.display_order - b.display_order);
+    const teaching = await root.query<
+      {
+        section_id: string;
+        class_id: string;
+        academic_year_id: string;
+        subject_id: string;
+        employee_id: string;
+      }[]
+    >(
+      `SELECT sec.id AS section_id, sec.class_id, sec.academic_year_id,
+              cs.subject_id, st.employee_id
+         FROM sections sec
+         JOIN class_subjects cs
+           ON cs.class_id = sec.class_id AND cs.academic_year_id = sec.academic_year_id
+         JOIN subject_teachers st
+           ON st.section_id = sec.id AND st.class_subject_id = cs.id
+          AND st.effective_to IS NULL
+        WHERE sec.org_id = $1
+        ORDER BY sec.id, cs.id`,
+      [orgId],
+    );
+    const bySection = new Map<string, typeof teaching>();
+    for (const r of teaching) {
+      bySection.set(r.section_id, [...(bySection.get(r.section_id) ?? []), r]);
+    }
+    const days = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const cols: string[][] = [[], [], [], [], [], [], [], []];
+    let shift = 0;
+    for (const [sectionId, subjects] of bySection) {
+      shift++;
+      days.forEach((day, d) =>
+        periods.forEach((period, p) => {
+          const pick = subjects[(d * 3 + p + shift) % subjects.length];
+          cols[0].push(orgId);
+          cols[1].push(pick.academic_year_id);
+          cols[2].push(pick.class_id);
+          cols[3].push(sectionId);
+          cols[4].push(day);
+          cols[5].push(period.id);
+          cols[6].push(pick.subject_id);
+          cols[7].push(pick.employee_id);
+        }),
+      );
+    }
+    await root.query(
+      `INSERT INTO class_timetables (org_id, academic_year_id, class_id, section_id,
+         day_of_week, period_id, subject_id, employee_id)
+       SELECT * FROM unnest($1::uuid[], $2::uuid[], $3::uuid[], $4::uuid[],
+         $5::text[], $6::uuid[], $7::uuid[], $8::uuid[])`,
+      cols,
+    );
+    await root.query(
+      `INSERT INTO timetable_publications (org_id, section_id, published_at, published_by)
+       SELECT $1, id, now(), $2 FROM sections WHERE org_id = $1`,
+      [orgId, owner.id],
+    );
+    log(`  ${cols[0].length} timetable periods in ${bySection.size} sections`);
+
+    // The term's events (PTM, sports day, annual day…).
+    const events: [string, string, number, number, boolean, string | null][] = [
+      [
+        'Parent-teacher meeting',
+        'ptm',
+        6,
+        6,
+        true,
+        'Meet the class teacher, 9 am to 1 pm. Report cards will be discussed.',
+      ],
+      [
+        'Annual sports day',
+        'sports',
+        14,
+        15,
+        true,
+        'Track events on day one, team games on day two. Sports uniform.',
+      ],
+      [
+        'Science exhibition',
+        'activity',
+        24,
+        24,
+        true,
+        'Classes 6 to 10 present their projects in the school hall.',
+      ],
+      ['Staff meeting: half-yearly review', 'meeting', 3, 3, false, null],
+      [
+        'Annual day rehearsal',
+        'event',
+        32,
+        34,
+        true,
+        'Participants stay till 3 pm.',
+      ],
+      [
+        'Annual day',
+        'event',
+        36,
+        36,
+        true,
+        'Parents are invited. Programme starts 5 pm in the school ground.',
+      ],
+    ];
+    for (const [title, kind, from, to, forParents, description] of events) {
+      await root.query(
+        `INSERT INTO school_events (org_id, title, description, kind, date_from, date_to, for_parents, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          orgId,
+          title,
+          description,
+          kind,
+          addDays(today, from),
+          addDays(today, to),
+          forParents,
+          owner.id,
+        ],
+      );
+    }
+
+    // Homework in Class 5 A: a few due soon, a couple past with submissions.
+    const fiveA = sectionIds['5:A'];
+    const fiveASubjects = await root.query<{ id: string; name: string }[]>(
+      `SELECT cs.id, sub.name FROM class_subjects cs
+         JOIN subjects sub ON sub.id = cs.subject_id
+         JOIN sections sec ON sec.class_id = cs.class_id AND sec.academic_year_id = cs.academic_year_id
+        WHERE sec.id = $1`,
+      [fiveA],
+    );
+    const subjectId = (name: string) =>
+      fiveASubjects.find((x) => x.name === name)?.id ?? fiveASubjects[0].id;
+    const homework: [string, string, string, number, number][] = [
+      [
+        'Mathematics',
+        'Exercise 6.2: questions 1 to 12',
+        'Show all working in your maths notebook.',
+        -9,
+        -6,
+      ],
+      [
+        'English',
+        'Write a letter to your friend about Diwali',
+        'About 120 words. Use the format we practised in class.',
+        -7,
+        -3,
+      ],
+      [
+        'Environmental Studies',
+        'Draw and label the water cycle',
+        'On an A4 sheet; colour it.',
+        -2,
+        2,
+      ],
+      [
+        'Mathematics',
+        'Fractions worksheet',
+        'Complete both sides of the worksheet given in class.',
+        -1,
+        1,
+      ],
+      [
+        'Hindi',
+        'पाठ 7 के प्रश्न-उत्तर लिखें',
+        'कॉपी में साफ़-साफ़ लिखें।',
+        0,
+        3,
+      ],
+    ];
+    const enrolled = await root.query<{ id: string }[]>(
+      `SELECT id FROM student_enrollments WHERE section_id = $1 AND status = 'active' ORDER BY roll_no`,
+      [fiveA],
+    );
+    for (const [subject, title, description, set, due] of homework) {
+      const [row] = await root.query<{ id: string }[]>(
+        `INSERT INTO homework (org_id, section_id, class_subject_id, title, description, assigned_on, due_date, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        [
+          orgId,
+          fiveA,
+          subjectId(subject),
+          title,
+          description,
+          addDays(today, set),
+          addDays(today, due),
+          owner.id,
+        ],
+      );
+      if (due < 0) {
+        // Most handed it in; a few didn't.
+        const handed = enrolled.filter((_, i) => i % 7 !== 3 && i % 11 !== 5);
+        await root.query(
+          `INSERT INTO homework_submissions (org_id, homework_id, enrollment_id, marked_by, marked_at)
+           SELECT $1, $2, e, $3, now() FROM unnest($4::uuid[]) AS e`,
+          [orgId, row.id, owner.id, handed.map((e) => e.id)],
+        );
+      }
+    }
+
+    // Admission enquiries for next session, at every stage.
+    const enquiries: [
+      string,
+      number,
+      string,
+      string,
+      string,
+      string,
+      number | null,
+      string | null,
+    ][] = [
+      [
+        'Ishaan Malhotra',
+        1,
+        'Rohit Malhotra',
+        '9811100001',
+        'walk_in',
+        'new',
+        1,
+        null,
+      ],
+      [
+        'Myra Kapoor',
+        1,
+        'Neha Kapoor',
+        '9811100002',
+        'website',
+        'new',
+        0,
+        null,
+      ],
+      [
+        'Vivaan Sethi',
+        3,
+        'Amit Sethi',
+        '9811100003',
+        'phone',
+        'contacted',
+        2,
+        null,
+      ],
+      [
+        'Anaya Bhatt',
+        6,
+        'Kavita Bhatt',
+        '9811100004',
+        'referral',
+        'contacted',
+        -1,
+        null,
+      ],
+      [
+        'Reyansh Arora',
+        2,
+        'Sunil Arora',
+        '9811100005',
+        'walk_in',
+        'visited',
+        3,
+        null,
+      ],
+      [
+        'Kiara Chawla',
+        4,
+        'Pooja Chawla',
+        '9811100006',
+        'social',
+        'visited',
+        0,
+        null,
+      ],
+      [
+        'Advait Joshi',
+        9,
+        'Manish Joshi',
+        '9811100007',
+        'phone',
+        'lost',
+        null,
+        'Chose a school nearer home',
+      ],
+      [
+        'Saanvi Goel',
+        1,
+        'Ritu Goel',
+        '9811100008',
+        'website',
+        'new',
+        null,
+        null,
+      ],
+    ];
+    for (const [
+      name,
+      cls,
+      parent,
+      phone,
+      source,
+      stage,
+      follow,
+      lost,
+    ] of enquiries) {
+      await root.query(
+        `INSERT INTO enquiries (org_id, student_name, class_id, guardian_name, phone, source, stage, follow_up_on, lost_reason, created_by, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now() - (random() * interval '20 days'))`,
+        [
+          orgId,
+          name,
+          classIds[cls],
+          parent,
+          `+91${phone}`,
+          source,
+          stage,
+          follow === null ? null : addDays(today, follow),
+          lost,
+          owner.id,
+        ],
+      );
+    }
+    log(
+      `  ${events.length} events, ${homework.length} homework, ${enquiries.length} enquiries`,
+    );
+  });
+
   await step('circulars', async () => {
     await post(admin, '/notices', {
       title: 'Winter break and school timings',

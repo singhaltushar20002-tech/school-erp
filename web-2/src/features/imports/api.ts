@@ -3,7 +3,7 @@ import { apiFetch } from "~/lib/api/client"
 // Excel imports (backend `imports`): upload → a validation job → a
 // row-by-row preview → commit (all rows, or the valid ones only).
 
-export type ImportType = "students" | "staff"
+export type ImportType = "students" | "staff" | "opening_balances"
 export type ImportStatus =
   "uploaded" | "validating" | "validated" | "committing" | "done" | "failed"
 
@@ -58,3 +58,19 @@ export async function waitForImport(
   }
   throw new Error("The import is taking too long")
 }
+
+export interface ImportColumns {
+  expected: { header: string; required: boolean }[]
+  fileHeaders: string[]
+  columnMap: Record<string, string>
+}
+
+export const getImportColumns = (id: string) =>
+  apiFetch<ImportColumns>(`/imports/${id}/columns`)
+
+/** Saves how the file's columns match the template; checks the file again. */
+export const remapImport = (id: string, columnMap: Record<string, string>) =>
+  apiFetch<unknown>(`/imports/${id}/columns`, {
+    method: "POST",
+    body: { columnMap },
+  })

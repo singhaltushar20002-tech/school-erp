@@ -114,6 +114,12 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | `ROLE_REQUIRED` | Choose a role, or give the designation a default role, before inviting |
 | `USER_ALREADY_LINKED` | User is already linked to another employee |
 
+## enquiries
+
+| Code | Message (English) |
+| ---- | ----------------- |
+| `INVALID_PHONE` | That phone number is not valid |
+
 ## enrollments
 
 | Code | Message (English) |
@@ -213,7 +219,6 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | ---- | ----------------- |
 | `GUARDIAN_ALREADY_LINKED` | Guardian is already linked to this student |
 | `GUARDIAN_PHONE_TAKEN` | A guardian with this phone already exists; link them instead |
-| `INVALID_PHONE` | Invalid phone number |
 | `NO_PORTAL_ACCOUNT` | The guardian has no portal login |
 
 ## holidays
@@ -221,6 +226,13 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | Code | Message (English) |
 | ---- | ----------------- |
 | `HOLIDAY_EXISTS` | A holiday with this name already starts on that day |
+
+## homework
+
+| Code | Message (English) |
+| ---- | ----------------- |
+| `HOMEWORK_DUE_PAST` | The due date has already passed |
+| `HOMEWORK_SUBJECT_MISMATCH` | That subject isn't taught in this section |
 
 ## idempotency
 
@@ -237,6 +249,7 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | `FORBIDDEN` | Importing ${importer.type} needs ${importer.permission} |
 | `IMPORT_EMPTY` | There are no valid rows to import |
 | `IMPORT_HAS_ERRORS` | ${totals.invalid} row(s) have errors; fix them or import the valid rows only |
+| `IMPORT_NOT_REMAPPABLE` | The import is ${batch.status} |
 | `IMPORT_NOT_VALIDATED` | The import is ${batch.status} |
 | `MARK_SHEET_LOCKED` | The sheet is ${sheet.status} |
 | `MARK_SHEET_REQUIRED` | Pick the mark sheet to import into |

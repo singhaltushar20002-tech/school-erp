@@ -2,6 +2,8 @@ import { queryOptions } from "@tanstack/react-query"
 
 import type { AttendanceTally } from "~/features/dashboard/api"
 import type { FeeStatement } from "~/features/students/api"
+import type { CalendarMonth } from "~/features/calendar/api"
+import type { TimetableGrid } from "~/features/timetable/api"
 import { apiFetch } from "~/lib/api/client"
 
 // The guardian and student portal (backend/src/modules/portal/). Every
@@ -298,3 +300,40 @@ export async function portalReceiptUrl(receiptId: string): Promise<string> {
   if (!job.downloadUrl) throw new Error("PDF not ready")
   return job.downloadUrl
 }
+
+export interface PortalHomework {
+  id: string
+  subjectName: string
+  title: string
+  description: string | null
+  assignedOn: string
+  dueDate: string
+  handedIn: boolean
+  attachmentLinks: { fileId: string; name: string; url: string }[]
+}
+
+export const childHomeworkQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "homework"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<PortalHomework[]>(`${child(id)}/homework`, { signal }),
+  })
+
+export const childTimetableQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "timetable"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<{ timetable: TimetableGrid | null }>(`${child(id)}/timetable`, {
+        signal,
+      }),
+  })
+
+export const childCalendarQuery = (id: string, month: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "calendar", month] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<CalendarMonth>(`${child(id)}/calendar`, {
+        signal,
+        query: { month },
+      }),
+  })

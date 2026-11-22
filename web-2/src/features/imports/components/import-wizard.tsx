@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   CheckCircle2Icon,
   DownloadIcon,
@@ -29,12 +29,18 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
+import { Label } from "~/components/ui/label"
+import { NativeSelect, NativeSelectOption } from "~/components/ui/native-select"
+import { allows } from "~/features/access/permissions"
+import { usePermissions } from "~/features/access/use-permissions"
 import { useSchoolFormat } from "~/features/settings/use-school-format"
 import { isApiError } from "~/lib/api/errors"
 import { cn } from "~/lib/utils"
 
 import {
   commitImport,
+  getImportColumns,
+  remapImport,
   startImport,
   templateUrl,
   waitForImport,
@@ -47,12 +53,24 @@ import {
  * from Excel. Download the template, fill it, upload it, see every row's
  * problems before anything is saved, then import.
  */
-export function ImportWizard() {
+export function ImportWizard({ only }: { only?: ImportType } = {}) {
   const t = useTranslations("imports")
   const f = useSchoolFormat()
   const queryClient = useQueryClient()
   const input = useRef<HTMLInputElement>(null)
-  const [type, setType] = useState<ImportType>("students")
+  const permissions = usePermissions()
+  const types = (
+    [
+      ["students", "students:import"],
+      ["staff", "employees:import"],
+      ["opening_balances", "fees:bill"],
+    ] as const
+  )
+    .filter(([, permission]) => allows(permissions, { permission }))
+    .map(([k]) => k)
+    .filter((k) => !only || k === only)
+  const [picked, setType] = useState<ImportType | null>(null)
+  const type: ImportType = picked ?? types[0] ?? "students"
   const [batch, setBatch] = useState<ImportBatch | null>(null)
   const [done, setDone] = useState<ImportBatch | null>(null)
 
@@ -91,8 +109,12 @@ export function ImportWizard() {
 
   return (
     <div className="flex max-w-4xl flex-col gap-4">
-      <div role="tablist" aria-label={t("what")} className="flex gap-1.5">
-        {(["students", "staff"] as const).map((k) => (
+      <div
+        role="tablist"
+        aria-label={t("what")}
+        className={cn("flex gap-1.5", only && "hidden")}
+      >
+        {types.map((k) => (
           <Button
             key={k}
             role="tab"
@@ -156,6 +178,16 @@ export function ImportWizard() {
           </ol>
         </CardContent>
       </Card>
+
+      {batch?.status === "failed" &&
+        batch.id &&
+        batch.errors.some((e) => e.code === "MISSING_COLUMN") && (
+          <ColumnMatcher
+            key={batch.id}
+            importId={batch.id}
+            onChecked={(b) => setBatch(b)}
+          />
+        )}
 
       {batch?.status === "failed" && (
         <Alert variant="destructive">
@@ -264,7 +296,9 @@ export function ImportWizard() {
                 href={
                   type === "students"
                     ? "/dashboard/students"
-                    : "/dashboard/staff"
+                    : type === "staff"
+                      ? "/dashboard/staff"
+                      : "/dashboard/fees/dues"
                 }
                 className={buttonVariants({ variant: "outline", size: "sm" })}
               >
@@ -297,5 +331,93 @@ function Step({
       </span>
       {children}
     </li>
+  )
+}
+
+/**
+ * The file's headers differ from the template: match each template column
+ * to one of the file's, then check the file again.
+ */
+function ColumnMatcher({
+  importId,
+  onChecked,
+}: {
+  importId: string
+  onChecked: (batch: ImportBatch) => void
+}) {
+  const t = useTranslations("imports.mapping")
+  const columns = useQuery({
+    queryKey: ["imports", importId, "columns"],
+    queryFn: () => getImportColumns(importId),
+  })
+  const [map, setMap] = useState<Record<string, string> | null>(null)
+  const guess = (header: string, files: string[]) =>
+    files.find((h) => h.toLowerCase().trim() === header.toLowerCase()) ??
+    files.find((h) =>
+      h.toLowerCase().includes(header.toLowerCase().split(" ")[0])
+    ) ??
+    ""
+  const current =
+    map ??
+    Object.fromEntries(
+      (columns.data?.expected ?? []).map((c) => [
+        c.header,
+        columns.data?.columnMap[c.header] ??
+          guess(c.header, columns.data?.fileHeaders ?? []),
+      ])
+    )
+  const recheck = useMutation({
+    mutationFn: async () => {
+      await remapImport(importId, current)
+      return waitForImport(importId, ["uploaded", "validating"])
+    },
+    onSuccess: onChecked,
+  })
+  if (!columns.data) return null
+  const missing = columns.data.expected.filter(
+    (c) => c.required && !current[c.header]
+  )
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h2>{t("title")}</h2>
+        </CardTitle>
+        <CardDescription>{t("hint")}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {columns.data.expected.map((c, i) => (
+            <div key={c.header} className="flex flex-col gap-1.5">
+              <Label htmlFor={`map-${i}`}>
+                {c.required ? t("required", { header: c.header }) : c.header}
+              </Label>
+              <NativeSelect
+                id={`map-${i}`}
+                className="w-full"
+                value={current[c.header] ?? ""}
+                onChange={(e) =>
+                  setMap({ ...current, [c.header]: e.target.value })
+                }
+              >
+                <NativeSelectOption value="">{t("none")}</NativeSelectOption>
+                {columns.data.fileHeaders.map((h) => (
+                  <NativeSelectOption key={h} value={h}>
+                    {h}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </div>
+          ))}
+        </div>
+        <Button
+          className="w-fit"
+          disabled={missing.length > 0 || recheck.isPending}
+          onClick={() => recheck.mutate()}
+        >
+          {recheck.isPending ? t("checking") : t("recheck")}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }

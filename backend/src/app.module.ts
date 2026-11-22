@@ -37,6 +37,9 @@ import { TimetableModule } from '~/modules/timetable/timetable.module';
 import { PromotionModule } from '~/modules/promotions/promotion.module';
 import { JobModule } from '~/modules/jobs/job.module';
 import { HolidayModule } from '~/modules/holidays/holiday.module';
+import { CalendarModule } from '~/modules/calendar/calendar.module';
+import { HomeworkModule } from '~/modules/homework/homework.module';
+import { EnquiryModule } from '~/modules/enquiries/enquiry.module';
 import { DomainEventModule } from '~/modules/domain-events/domain-event.module';
 import { AttendanceModule } from '~/modules/attendance/attendance.module';
 import { GradingModule } from '~/modules/grading/grading.module';
@@ -150,6 +153,9 @@ import { HostsModule } from '~/shared/hosts/app-hosts';
     PromotionModule,
     JobModule,
     HolidayModule,
+    CalendarModule,
+    HomeworkModule,
+    EnquiryModule,
     DomainEventModule,
     AttendanceModule,
     GradingModule,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useState } from "react"
 
@@ -23,6 +23,11 @@ import {
   currentSessionQuery,
   sectionsQuery,
 } from "~/features/academics/api"
+import {
+  enquiryQuery,
+  updateEnquiry,
+  type Enquiry,
+} from "~/features/enquiries/api"
 import { displaySettingsQuery } from "~/features/settings/api"
 import { isApiError } from "~/lib/api/errors"
 import { todayIn } from "~/lib/format"
@@ -79,22 +84,40 @@ const toInput = (v: Values): StudentInput => ({
     : {}),
 })
 
-/** `/dashboard/students/new`: admit a student, place them, link parents. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * `/dashboard/students/new`: admit a student, place them, link parents.
+ * With `?enquiry=<id>` the form starts from the admission enquiry and the
+ * enquiry is marked admitted once the student is saved.
+ */
 export function AdmitStudent() {
   const display = useQuery(displaySettingsQuery())
   const today = todayIn(display.data?.locale.timeZone)
+  const param = useSearchParams().get("enquiry")
+  const enquiryId = param && UUID.test(param) ? param : null
+  const enquiry = useQuery({
+    ...enquiryQuery(enquiryId ?? ""),
+    enabled: Boolean(enquiryId),
+  })
+  if (enquiryId && enquiry.isPending)
+    return <Skeleton className="h-96 max-w-3xl rounded-xl" />
+  const e = enquiry.data
+  const [first, ...rest] = (e?.studentName ?? "").trim().split(/\s+/)
   return (
     <StudentForm
+      key={e?.id ?? "new"}
+      enquiry={e ?? null}
       initial={{
-        firstName: "",
-        lastName: "",
-        gender: "",
-        dob: "",
+        firstName: e ? first : "",
+        lastName: e ? rest.join(" ") : "",
+        gender: e?.gender ?? "",
+        dob: e?.dateOfBirth ?? "",
         religion: "",
         bloodGroup: "",
         admissionDate: today,
         admissionType: "new",
-        previousSchool: "",
+        previousSchool: e?.previousSchool ?? "",
       }}
     />
   )
@@ -113,7 +136,15 @@ export function EditStudent({ id }: { id: string }) {
   )
 }
 
-function StudentForm({ id, initial }: { id?: string; initial: Values }) {
+function StudentForm({
+  id,
+  initial,
+  enquiry = null,
+}: {
+  id?: string
+  initial: Values
+  enquiry?: Enquiry | null
+}) {
   const t = useTranslations("students.form")
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -129,10 +160,13 @@ function StudentForm({ id, initial }: { id?: string; initial: Values }) {
     ...sectionsQuery(session.data?.id ?? ""),
     enabled: admitting && Boolean(session.data?.id),
   })
-  const [classId, setClassId] = useState("")
+  const [classId, setClassId] = useState(enquiry?.classId ?? "")
   const [sectionId, setSectionId] = useState("")
   const [roll, setRoll] = useState("")
-  const [father, setFather] = useState({ name: "", phone: "" })
+  const [father, setFather] = useState({
+    name: enquiry?.guardianName ?? "",
+    phone: enquiry?.phone ?? "",
+  })
   const [mother, setMother] = useState({ name: "", phone: "" })
   const [primary, setPrimary] = useState<"father" | "mother">("father")
 
@@ -198,6 +232,12 @@ function StudentForm({ id, initial }: { id?: string; initial: Values }) {
               }),
           relation,
           isPrimary: primary === relation,
+        })
+      }
+      if (enquiry) {
+        await updateEnquiry(enquiry.id, {
+          stage: "admitted",
+          admittedStudentId: student.id,
         })
       }
       return student.id

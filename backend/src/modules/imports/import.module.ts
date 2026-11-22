@@ -19,6 +19,8 @@ import { ImportController } from './controllers/import.controller';
 import { ImportJob } from './import.job';
 import { ImportRepository } from './import.repository';
 import { MarksImporter } from './importers/marks.importer';
+import { OpeningBalanceImporter } from './importers/opening-balance.importer';
+import { FeeModule } from '~/modules/fees/fee.module';
 import { StaffImporter } from './importers/staff.importer';
 import { StudentImporter } from './importers/student.importer';
 import { ImportService } from './services/import.service';
@@ -27,6 +29,7 @@ import { ImportService } from './services/import.service';
 @Module({
   imports: [
     RbacModule,
+    FeeModule,
     AccessScopeModule,
     AcademicYearModule,
     ClassModule,
@@ -50,6 +53,7 @@ import { ImportService } from './services/import.service';
     StudentImporter,
     StaffImporter,
     MarksImporter,
+    OpeningBalanceImporter,
     ImportJob,
   ],
 })

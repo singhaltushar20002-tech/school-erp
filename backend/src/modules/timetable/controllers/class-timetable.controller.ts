@@ -19,6 +19,7 @@ import { CreateTimetableDto } from '../dto/create-timetable.dto';
 import { FilterTimetableDto } from '../dto/filter-timetable.dto';
 import { UpdateTimetableDto } from '../dto/update-timetable.dto';
 import { ClassTimetableService } from '../services/class-timetable.service';
+import { TimetableGridService } from '../services/timetable-grid.service';
 import { ResponseMessage } from '~/common/decorators/response.decorators';
 
 @ApiTags('Tenant / Timetables')
@@ -31,7 +32,10 @@ import { ResponseMessage } from '~/common/decorators/response.decorators';
 @Controller('timetables')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class ClassTimetableController {
-  constructor(private readonly timetableService: ClassTimetableService) {}
+  constructor(
+    private readonly timetableService: ClassTimetableService,
+    private readonly grid_: TimetableGridService,
+  ) {}
 
   @Get()
   @RequirePermissions(PERMISSIONS.TIMETABLES_READ)
@@ -45,6 +49,29 @@ export class ClassTimetableController {
   @ResponseMessage('Timetable entry created')
   create(@Body() dto: CreateTimetableDto) {
     return this.timetableService.create(dto);
+  }
+
+  /** The section's week as a grid, with whether it is published. */
+  @Get('sections/:sectionId')
+  @RequirePermissions(PERMISSIONS.TIMETABLES_READ)
+  @ResponseMessage('Timetable')
+  grid(@Param('sectionId', ParseUUIDPipe) sectionId: string) {
+    return this.grid_.grid(sectionId);
+  }
+
+  /** Parents and students see it from now on. */
+  @Post('sections/:sectionId/publish')
+  @RequirePermissions(PERMISSIONS.TIMETABLES_UPDATE)
+  @ResponseMessage('Timetable published')
+  publish(@Param('sectionId', ParseUUIDPipe) sectionId: string) {
+    return this.grid_.publish(sectionId);
+  }
+
+  @Delete('sections/:sectionId/publish')
+  @RequirePermissions(PERMISSIONS.TIMETABLES_UPDATE)
+  @ResponseMessage('Timetable unpublished')
+  unpublish(@Param('sectionId', ParseUUIDPipe) sectionId: string) {
+    return this.grid_.unpublish(sectionId);
   }
 
   @Get(':id')

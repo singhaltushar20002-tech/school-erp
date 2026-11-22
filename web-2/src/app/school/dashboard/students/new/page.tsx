@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { Suspense } from "react"
 
 import { PageHeader } from "~/components/layouts/page-header"
 import { AdmitStudent } from "~/features/students/components/student-form"
@@ -15,7 +16,9 @@ export default async function AdmitStudentPage() {
   return (
     <>
       <PageHeader title={t("admitTitle")} description={t("admitDescription")} />
-      <AdmitStudent />
+      <Suspense>
+        <AdmitStudent />
+      </Suspense>
     </>
   )
 }

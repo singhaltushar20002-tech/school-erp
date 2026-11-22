@@ -266,6 +266,17 @@ export const PERMISSIONS = {
   /** Notification templates. */
   COMMUNICATION_MANAGE: 'communication:manage',
 
+  // School calendar, homework and admission enquiries
+  /** Add and edit school events on the calendar (reading needs `holidays:read`). */
+  EVENTS_MANAGE: 'events:manage',
+  /** Homework and who has handed it in (assigned scope: own subjects). */
+  HOMEWORK_READ: 'homework:read',
+  /** Set homework and mark submissions (assigned scope: own subjects). */
+  HOMEWORK_MANAGE: 'homework:manage',
+  /** Admission enquiries and their follow-ups. */
+  ENQUIRIES_READ: 'enquiries:read',
+  ENQUIRIES_MANAGE: 'enquiries:manage',
+
   // Role dashboards (PRD 6.22)
   DASHBOARD_ADMIN: 'dashboard_admin:read',
   DASHBOARD_TEACHER: 'dashboard_teacher:read',

@@ -17,6 +17,10 @@ import { PortalAccessService } from './services/portal-access.service';
 import { PortalService } from './services/portal.service';
 
 /** The guardian and student portal API (`/portal/*`, PRD 6.14). */
+import { TimetableModule } from '~/modules/timetable/timetable.module';
+import { HomeworkModule } from '~/modules/homework/homework.module';
+import { CalendarModule } from '~/modules/calendar/calendar.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Membership]),
@@ -31,6 +35,9 @@ import { PortalService } from './services/portal.service';
     FeeModule,
     NoticeModule,
     SettingsModule,
+    TimetableModule,
+    HomeworkModule,
+    CalendarModule,
   ],
   controllers: [PortalController],
   providers: [PortalAccessService, PortalService],

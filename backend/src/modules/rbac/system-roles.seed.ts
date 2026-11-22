@@ -138,6 +138,10 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
       'Runs academics and students; reads settings, HR and finance summaries',
     scope: RoleScope.SCHOOL,
     permissions: [
+      P.EVENTS_MANAGE,
+      P.HOMEWORK_READ,
+      P.ENQUIRIES_READ,
+      P.ENQUIRIES_MANAGE,
       P.SETTINGS_READ,
       P.DOMAINS_READ,
       ...ACADEMIC_SETUP_WRITE,
@@ -228,6 +232,8 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     description: 'Teaching staff, limited to the sections and subjects taught',
     scope: RoleScope.ASSIGNED,
     permissions: [
+      P.HOMEWORK_READ,
+      P.HOMEWORK_MANAGE,
       ...ACADEMIC_SETUP_READ,
       ...STUDENTS_READ,
       P.STUDENT_DOCUMENTS_READ,
@@ -244,6 +250,8 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     description: 'Teacher who also manages the students of their own section',
     scope: RoleScope.ASSIGNED,
     permissions: [
+      P.HOMEWORK_READ,
+      P.HOMEWORK_MANAGE,
       ...ACADEMIC_SETUP_READ,
       ...STUDENTS_READ,
       P.STUDENTS_UPDATE,
@@ -273,6 +281,9 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     description: 'Front desk: admissions, student records and fee collection',
     scope: RoleScope.SCHOOL,
     permissions: [
+      P.EVENTS_MANAGE,
+      P.ENQUIRIES_READ,
+      P.ENQUIRIES_MANAGE,
       ...STUDENT_LOOKUPS,
       ...STUDENTS_READ,
       P.STUDENTS_CREATE,

@@ -1,4 +1,10 @@
-import { IsEnum, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsDefined,
+  IsEnum,
+  IsObject,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 import { PaginationQueryDto } from '~/common/dto/pagination-query.dto';
 import { ImportMode, ImportType } from '../enums/import.enum';
 
@@ -40,4 +46,11 @@ export class FilterImportDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(ImportType)
   type?: ImportType;
+}
+
+/** Template header → the file's header ('' leaves an optional column out). */
+export class ColumnMapDto {
+  @IsDefined()
+  @IsObject()
+  columnMap: Record<string, string>;
 }

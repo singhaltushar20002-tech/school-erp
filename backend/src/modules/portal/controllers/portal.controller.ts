@@ -22,10 +22,14 @@ import { PermissionsGuard } from '~/modules/rbac/guards/permissions.guard';
 import { PERMISSIONS } from '~/modules/rbac/permissions.catalog';
 import {
   PortalAttendanceQueryDto,
+  PortalCalendarQueryDto,
   PortalHandoffDto,
   PortalLeaveDto,
   PortalReceiptPdfDto,
 } from '../dto/portal.dto';
+import { TimetableGridService } from '~/modules/timetable/services/timetable-grid.service';
+import { HomeworkService } from '~/modules/homework/homework.service';
+import { CalendarService } from '~/modules/calendar/calendar.service';
 import { PortalAccessService } from '../services/portal-access.service';
 import { PortalService } from '../services/portal.service';
 
@@ -49,6 +53,9 @@ export class PortalController {
     private readonly access: PortalAccessService,
     private readonly portal: PortalService,
     private readonly notices: NoticeService,
+    private readonly timetables: TimetableGridService,
+    private readonly homeworkService: HomeworkService,
+    private readonly calendarService: CalendarService,
   ) {}
 
   /** This school's children (a student sees themself). */
@@ -120,6 +127,41 @@ export class PortalController {
   @ResponseMessage('Fees')
   fees(@Param('id', ParseUUIDPipe) id: string) {
     return this.portal.fees(id);
+  }
+
+  /** The section's timetable, once the school has published it. */
+  @Get('children/:id/timetable')
+  @ResponseMessage('Timetable')
+  async timetable(@Param('id', ParseUUIDPipe) id: string) {
+    const { enrollment } = await this.access.enrollmentOf(id);
+    return {
+      timetable: await this.timetables.publishedGrid(enrollment.sectionId),
+    };
+  }
+
+  /** Homework of the last two weeks and everything still due. */
+  @Get('children/:id/homework')
+  @ResponseMessage('Homework')
+  async homework(@Param('id', ParseUUIDPipe) id: string) {
+    const { enrollment } = await this.access.enrollmentOf(id);
+    return this.homeworkService.forEnrollment(
+      enrollment.id,
+      enrollment.sectionId,
+    );
+  }
+
+  /** A month of the school calendar for the child's class. */
+  @Get('children/:id/calendar')
+  @ResponseMessage('Calendar')
+  async calendar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: PortalCalendarQueryDto,
+  ) {
+    const { enrollment } = await this.access.enrollmentOf(id);
+    return this.calendarService.month(query.month, {
+      classId: enrollment.classId,
+      forParents: true,
+    });
   }
 
   @Get('children/:id/leave')

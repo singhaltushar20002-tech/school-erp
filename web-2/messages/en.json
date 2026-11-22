@@ -429,7 +429,12 @@
       "domains": "Domains",
       "dataExport": "Data export",
       "account": "Account",
-      "dues": "Dues and defaulters"
+      "dues": "Dues and defaulters",
+      "timetable": "Timetable",
+      "calendar": "Calendar",
+      "homework": "Homework",
+      "enquiries": "Enquiries",
+      "openingBalances": "Opening balances"
     }
   },
   "shell": {
@@ -1049,7 +1054,10 @@
       "attendance": "Attendance",
       "results": "Results",
       "fees": "Fees",
-      "notices": "Notices"
+      "notices": "Notices",
+      "homework": "Homework",
+      "timetable": "Timetable",
+      "calendar": "Calendar"
     },
     "chooseChild": "Choose a child",
     "placement": "{className}, section {section}",
@@ -1165,7 +1173,31 @@
       "noticesTitle": "Notices from school",
       "noNoticesTitle": "No notices",
       "noNoticesBody": "Circulars from the school appear here.",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "homeworkTitle": "{name}'s homework",
+      "timetableTitle": "{name}'s timetable",
+      "calendarTitle": "School calendar"
+    },
+    "homework": {
+      "none": "No homework in the last two weeks.",
+      "dueTitle": "Due",
+      "pastTitle": "Earlier",
+      "handedIn": "Handed in",
+      "notHandedIn": "Not handed in",
+      "pending": "To do",
+      "dueToday": "Due today",
+      "due": "Due {date}"
+    },
+    "timetable": {
+      "notPublished": "The school hasn't published the timetable yet."
+    },
+    "today": {
+      "title": "Today's classes",
+      "description": "From the published timetable.",
+      "notPublished": "The timetable isn't published yet.",
+      "noClasses": "No classes today.",
+      "week": "Full week",
+      "calendar": "School calendar"
     }
   },
   "ui": {
@@ -1854,12 +1886,14 @@
     "what": "What to import",
     "types": {
       "students": "Students",
-      "staff": "Staff"
+      "staff": "Staff",
+      "opening_balances": "Opening balances"
     },
     "stepsTitle": "Three steps",
     "hint": {
       "students": "One row per student with class, section, roll and both parents' mobiles. Parents get their app login automatically.",
-      "staff": "One row per staff member with designation, mobile and email."
+      "staff": "One row per staff member with designation, mobile and email.",
+      "opening_balances": "One row per student: their Student ID and the amount still owed from the old system. Each becomes a bill you can collect and remind about."
     },
     "step1": "Download the template",
     "download": "Download template",
@@ -1882,11 +1916,25 @@
     "doneTitle": "Import finished",
     "doneBody": {
       "students": "{n} students added to their classes.",
-      "staff": "{n} staff added."
+      "staff": "{n} staff added.",
+      "opening_balances": "{n} opening balances added as bills."
     },
     "open": {
       "students": "Open the student directory",
-      "staff": "Open the staff directory"
+      "staff": "Open the staff directory",
+      "opening_balances": "Open dues"
+    },
+    "balances": {
+      "title": "Opening balances",
+      "description": "Bring in what each student still owed in your old system, so it shows in dues and can be collected."
+    },
+    "mapping": {
+      "title": "Match your columns",
+      "hint": "Your file's headings don't match the template. Pick which of your columns holds each field, then check the file again.",
+      "required": "{header} (needed)",
+      "none": "Not in my file",
+      "recheck": "Check the file again",
+      "checking": "Checking…"
     }
   },
   "exams": {
@@ -2075,5 +2123,185 @@
     "saving": "Saving…",
     "saved": "{count, plural, one {Saved {n} student} other {Saved {n} students}}",
     "failed": "Some changes could not be saved"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "description": "Holidays, exams and school events for the term.",
+    "class": "Class",
+    "allClasses": "All classes",
+    "add": "Add event",
+    "addTitle": "New school event",
+    "eventTitle": "Title",
+    "titlePlaceholder": "e.g. Parent-teacher meeting",
+    "kind": "Type",
+    "for": "For",
+    "wholeSchool": "Whole school",
+    "from": "From",
+    "to": "To",
+    "details": "Details",
+    "forParents": "Show to parents in the app",
+    "cancel": "Cancel",
+    "save": "Add",
+    "saving": "Adding…",
+    "added": "Event added",
+    "removed": "Event removed",
+    "failed": "The event could not be saved",
+    "previous": "Previous month",
+    "next": "Next month",
+    "nothing": "Nothing on the calendar this month.",
+    "range": "{from} – {to}",
+    "staffOnly": "Staff only",
+    "remove": "Remove {title}",
+    "types": {
+      "holiday": "Holiday",
+      "exam": "Exam",
+      "event": "Event"
+    },
+    "kinds": {
+      "event": "Event",
+      "ptm": "Parent-teacher meeting",
+      "activity": "Activity",
+      "sports": "Sports",
+      "meeting": "Staff meeting"
+    },
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  },
+  "timetable": {
+    "title": "Timetable",
+    "description": "Build each section's week period by period, then publish it to parents.",
+    "section": "Section",
+    "period": "Period",
+    "add": "Add",
+    "editCell": "{day}, {period}",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "noPeriods": "No periods set up yet",
+    "noPeriodsBody": "Add the school's periods (with their times) first.",
+    "publishedOn": "Published {date}",
+    "draft": "Not published",
+    "filled": "{filled} of {total} periods filled",
+    "publish": "Publish to parents",
+    "unpublish": "Unpublish",
+    "publishedToast": "Timetable published",
+    "unpublishedToast": "Timetable unpublished",
+    "cellTitle": "{day}, {period}",
+    "subject": "Subject",
+    "pickSubject": "Pick a subject",
+    "teacher": "Teacher",
+    "pickTeacher": "Pick a teacher",
+    "clear": "Clear",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Period saved",
+    "cleared": "Period cleared",
+    "failed": "The period could not be saved"
+  },
+  "homework": {
+    "title": "Homework",
+    "description": "Homework set in the last two weeks and still due, with who has handed it in.",
+    "set": "Set homework",
+    "none": "No homework yet",
+    "noneBody": "Homework you set appears here with its submissions.",
+    "hasAttachment": "Has an attachment",
+    "due": "Due {date}",
+    "handedIn": "{done}/{total} in",
+    "setTitle": "Set homework",
+    "classSubject": "Class and subject",
+    "pick": "Pick one",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Exercise 4.2, questions 1–10",
+    "details": "Instructions",
+    "dueDate": "Due date",
+    "attach": "Attach a file",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "setButton": "Set homework",
+    "setDone": "Homework set; parents can see it now",
+    "failed": "The homework could not be saved",
+    "detailTitle": "Homework",
+    "setOnDue": "set {set}, due {due}",
+    "detailsTitle": "Instructions",
+    "rosterTitle": "Handed in: {done} of {total}",
+    "rosterHint": "Tick everyone who handed it in.",
+    "allIn": "Everyone",
+    "noneIn": "No one",
+    "missingTitle": "Not handed in: {n}",
+    "missingHint": "Follow up with these students.",
+    "allHandedIn": "Everyone has handed it in.",
+    "delete": "Delete",
+    "unsaved": "Unsaved changes",
+    "allSaved": "Everything is saved.",
+    "save": "Save",
+    "saved": "Submissions saved"
+  },
+  "enquiries": {
+    "title": "Admission enquiries",
+    "description": "Every family that asked about admission, from first call to admission, with follow-up dates.",
+    "stage": "Stage",
+    "stages": {
+      "open": "Open",
+      "new": "New",
+      "contacted": "Contacted",
+      "visited": "Visited",
+      "admitted": "Admitted",
+      "lost": "Lost"
+    },
+    "add": "New enquiry",
+    "search": "Search name or phone",
+    "empty": "No enquiries here",
+    "emptyBody": "Add walk-ins and calls as they come in.",
+    "for": "for {className}",
+    "followUp": "Follow up {date}",
+    "openStudent": "Open student",
+    "admit": "Admit",
+    "addTitle": "New enquiry",
+    "dialogHint": "The child, the parent to call back, and when.",
+    "studentName": "Child's name",
+    "classApplied": "Class applied for",
+    "dob": "Date of birth",
+    "gender": "Gender",
+    "genders": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "guardianName": "Parent's name",
+    "phone": "Phone",
+    "email": "Email",
+    "previousSchool": "Previous school",
+    "source": "How they heard",
+    "sources": {
+      "walk_in": "Walk-in",
+      "phone": "Phone call",
+      "website": "Website",
+      "referral": "Referral",
+      "social": "Social media",
+      "other": "Other"
+    },
+    "followUpOn": "Follow up on",
+    "lostReason": "Why lost",
+    "notes": "Notes",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Enquiry updated",
+    "added": "Enquiry added",
+    "failed": "The enquiry could not be saved"
   }
 }
