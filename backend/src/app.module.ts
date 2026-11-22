@@ -40,6 +40,10 @@ import { HolidayModule } from '~/modules/holidays/holiday.module';
 import { CalendarModule } from '~/modules/calendar/calendar.module';
 import { HomeworkModule } from '~/modules/homework/homework.module';
 import { EnquiryModule } from '~/modules/enquiries/enquiry.module';
+import { StaffAttendanceModule } from '~/modules/staff-attendance/staff-attendance.module';
+import { TransportModule } from '~/modules/transport/transport.module';
+import { LibraryModule } from '~/modules/library/library.module';
+import { PayrollModule } from '~/modules/payroll/payroll.module';
 import { DomainEventModule } from '~/modules/domain-events/domain-event.module';
 import { AttendanceModule } from '~/modules/attendance/attendance.module';
 import { GradingModule } from '~/modules/grading/grading.module';
@@ -156,6 +160,10 @@ import { HostsModule } from '~/shared/hosts/app-hosts';
     CalendarModule,
     HomeworkModule,
     EnquiryModule,
+    StaffAttendanceModule,
+    TransportModule,
+    LibraryModule,
+    PayrollModule,
     DomainEventModule,
     AttendanceModule,
     GradingModule,

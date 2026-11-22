@@ -138,6 +138,12 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
       'Runs academics and students; reads settings, HR and finance summaries',
     scope: RoleScope.SCHOOL,
     permissions: [
+      P.STAFF_ATTENDANCE_MANAGE,
+      P.STAFF_LEAVES_APPROVE,
+      P.SUBSTITUTIONS_MANAGE,
+      P.TRANSPORT_READ,
+      P.LIBRARY_READ,
+      P.PAYROLL_READ,
       P.EVENTS_MANAGE,
       P.HOMEWORK_READ,
       P.ENQUIRIES_READ,
@@ -210,6 +216,9 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     description: 'Fees and finance; reads students and staff',
     scope: RoleScope.SCHOOL,
     permissions: [
+      P.TRANSPORT_READ,
+      P.PAYROLL_READ,
+      P.PAYROLL_MANAGE,
       ...STUDENT_LOOKUPS,
       ...STUDENTS_READ,
       P.GUARDIANS_READ,
@@ -281,6 +290,10 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     description: 'Front desk: admissions, student records and fee collection',
     scope: RoleScope.SCHOOL,
     permissions: [
+      P.STAFF_ATTENDANCE_MANAGE,
+      P.SUBSTITUTIONS_MANAGE,
+      P.TRANSPORT_READ,
+      P.TRANSPORT_MANAGE,
       P.EVENTS_MANAGE,
       P.ENQUIRIES_READ,
       P.ENQUIRIES_MANAGE,
@@ -307,7 +320,13 @@ export const SYSTEM_ROLES: SystemRoleSeed[] = [
     name: 'librarian',
     description: 'Library management; reads students',
     scope: RoleScope.SCHOOL,
-    permissions: [...STUDENT_LOOKUPS, ...STUDENTS_READ, P.NOTICES_READ],
+    permissions: [
+      P.LIBRARY_READ,
+      P.LIBRARY_MANAGE,
+      ...STUDENT_LOOKUPS,
+      ...STUDENTS_READ,
+      P.NOTICES_READ,
+    ],
   },
   {
     // Read-only by design: never student health, notes or guardian details.

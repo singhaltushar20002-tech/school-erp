@@ -239,7 +239,14 @@ describe("searchNav", () => {
 
   it("keeps every item of a menu whose label matches", () => {
     expect(shape(searchNav(nav, "staff", label)).people).toEqual({
-      staff: ["staffDirectory", "departments", "designations"],
+      staff: [
+        "staffDirectory",
+        "departments",
+        "designations",
+        "staffAttendance",
+        "staffLeave",
+        "substitutes",
+      ],
     })
   })
 

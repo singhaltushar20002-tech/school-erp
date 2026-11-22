@@ -52,6 +52,8 @@ describe("message catalogs", () => {
         // UPI is the payment system's own name.
         "dashboard.finance.channels.upi",
         "fees.channels.upi",
+        // An accession number format, the same in every language.
+        "library.accessionPlaceholder",
         "fees.log.byMode.upi",
         "common.languages.en",
         "findSchool.addressPlaceholder",

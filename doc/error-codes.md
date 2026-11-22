@@ -254,6 +254,14 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | `MARK_SHEET_LOCKED` | The sheet is ${sheet.status} |
 | `MARK_SHEET_REQUIRED` | Pick the mark sheet to import into |
 
+## library
+
+| Code | Message (English) |
+| ---- | ----------------- |
+| `COPY_NOT_AVAILABLE` | That copy is ${copy.status} |
+| `COPY_NOT_FOUND` | No copy with accession number "${dto.accessionNo}" |
+| `STUDENT_NOT_FOUND` | No student with ID "${dto.studentId}" |
+
 ## notices
 
 | Code | Message (English) |
@@ -287,6 +295,13 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | `SLUG_CHANGE_TOO_SOON` | The school address can be changed once every 30 days |
 | `SLUG_INVALID` | slug query parameter is required |
 | `SLUG_UNCHANGED` | This is already the school address |
+
+## payroll
+
+| Code | Message (English) |
+| ---- | ----------------- |
+| `PAYROLL_EXISTS` | Payroll for ${dto.period} already exists |
+| `PAYROLL_FINALIZED` | This payroll is finalised |
 
 ## plans
 
@@ -368,6 +383,13 @@ Every error response is `{ success: false, statusCode, message, code?, … }`. T
 | `GOOGLE_EMAIL_MISMATCH` | Use the email address you signed in to Google with |
 | `INVALID_GOOGLE_TICKET` | Your Google sign-in has expired. Please try again. |
 | `INVALID_SIGNUP_LINK` | This signup link is invalid or has expired |
+
+## staff-attendance
+
+| Code | Message (English) |
+| ---- | ----------------- |
+| `LEAVE_DECIDED` | The leave is already ${leave.status} |
+| `STAFF_ATTENDANCE_FUTURE` | Attendance can't be marked for a future day |
 
 ## students
 

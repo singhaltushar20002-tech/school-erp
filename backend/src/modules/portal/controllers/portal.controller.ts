@@ -30,6 +30,8 @@ import {
 import { TimetableGridService } from '~/modules/timetable/services/timetable-grid.service';
 import { HomeworkService } from '~/modules/homework/homework.service';
 import { CalendarService } from '~/modules/calendar/calendar.service';
+import { TransportService } from '~/modules/transport/transport.service';
+import { LibraryService } from '~/modules/library/library.service';
 import { PortalAccessService } from '../services/portal-access.service';
 import { PortalService } from '../services/portal.service';
 
@@ -56,6 +58,8 @@ export class PortalController {
     private readonly timetables: TimetableGridService,
     private readonly homeworkService: HomeworkService,
     private readonly calendarService: CalendarService,
+    private readonly transportService: TransportService,
+    private readonly libraryService: LibraryService,
   ) {}
 
   /** This school's children (a student sees themself). */
@@ -162,6 +166,24 @@ export class PortalController {
       classId: enrollment.classId,
       forParents: true,
     });
+  }
+
+  /** The child's bus route, stop, and where the bus is now (simulated). */
+  @Get('children/:id/transport')
+  @ResponseMessage('Transport')
+  async transport(@Param('id', ParseUUIDPipe) id: string) {
+    const child = await this.access.child(id);
+    return {
+      transport: await this.transportService.forStudent(child.studentId),
+    };
+  }
+
+  /** Library books the child has out now. */
+  @Get('children/:id/library')
+  @ResponseMessage('Library')
+  async library(@Param('id', ParseUUIDPipe) id: string) {
+    const child = await this.access.child(id);
+    return this.libraryService.forStudent(child.studentId);
   }
 
   @Get('children/:id/leave')

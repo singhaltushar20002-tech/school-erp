@@ -20,6 +20,8 @@ import { PortalService } from './services/portal.service';
 import { TimetableModule } from '~/modules/timetable/timetable.module';
 import { HomeworkModule } from '~/modules/homework/homework.module';
 import { CalendarModule } from '~/modules/calendar/calendar.module';
+import { TransportModule } from '~/modules/transport/transport.module';
+import { LibraryModule } from '~/modules/library/library.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { CalendarModule } from '~/modules/calendar/calendar.module';
     TimetableModule,
     HomeworkModule,
     CalendarModule,
+    TransportModule,
+    LibraryModule,
   ],
   controllers: [PortalController],
   providers: [PortalAccessService, PortalService],

@@ -3,18 +3,21 @@ import {
   BookOpenCheckIcon,
   BookOpenIcon,
   BriefcaseBusinessIcon,
+  BusIcon,
   CalendarCheckIcon,
   CalendarDaysIcon,
   ClipboardListIcon,
   HeartHandshakeIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
+  LibraryIcon,
   MegaphoneIcon,
   MessagesSquareIcon,
   ReceiptIcon,
   SettingsIcon,
   ShieldCheckIcon,
   UsersIcon,
+  WalletCardsIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -149,6 +152,18 @@ export const NAV: NavCategory[] = [
         permission: "homework:read",
       },
       {
+        id: "transport",
+        icon: BusIcon,
+        href: "/dashboard/transport",
+        permission: "transport:read",
+      },
+      {
+        id: "library",
+        icon: LibraryIcon,
+        href: "/dashboard/library",
+        permission: "library:read",
+      },
+      {
         id: "exams",
         icon: ClipboardListIcon,
         items: [
@@ -250,6 +265,21 @@ export const NAV: NavCategory[] = [
             href: "/dashboard/staff/designations",
             permission: "designations:read",
           },
+          {
+            id: "staffAttendance",
+            href: "/dashboard/staff/attendance",
+            permission: "staff_attendance:manage",
+          },
+          {
+            id: "staffLeave",
+            href: "/dashboard/staff/leave",
+            permission: ["staff_leaves:approve", "staff_attendance:manage"],
+          },
+          {
+            id: "substitutes",
+            href: "/dashboard/staff/substitutes",
+            permission: "substitutions:manage",
+          },
         ],
       },
     ],
@@ -297,6 +327,12 @@ export const NAV: NavCategory[] = [
             permission: "fees:approve_waiver",
           },
         ],
+      },
+      {
+        id: "payroll",
+        icon: WalletCardsIcon,
+        href: "/dashboard/payroll",
+        permission: "payroll:read",
       },
       {
         id: "expenses",

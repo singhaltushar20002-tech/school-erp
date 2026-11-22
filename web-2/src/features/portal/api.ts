@@ -3,7 +3,12 @@ import { queryOptions } from "@tanstack/react-query"
 import type { AttendanceTally } from "~/features/dashboard/api"
 import type { FeeStatement } from "~/features/students/api"
 import type { CalendarMonth } from "~/features/calendar/api"
+import type { Loan } from "~/features/library/api"
 import type { TimetableGrid } from "~/features/timetable/api"
+import type {
+  LivePosition,
+  Route as TransportRoute,
+} from "~/features/transport/api"
 import { apiFetch } from "~/lib/api/client"
 
 // The guardian and student portal (backend/src/modules/portal/). Every
@@ -336,4 +341,25 @@ export const childCalendarQuery = (id: string, month: string) =>
         signal,
         query: { month },
       }),
+  })
+
+export const childTransportQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "transport"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<{
+        transport: {
+          route: TransportRoute
+          stopId: string
+          live: LivePosition
+        } | null
+      }>(`${child(id)}/transport`, { signal }),
+    refetchInterval: 30_000,
+  })
+
+export const childLibraryQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "library"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<Loan[]>(`${child(id)}/library`, { signal }),
   })

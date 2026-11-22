@@ -29,10 +29,15 @@ import { WeekGrid } from "~/features/timetable/components/timetable-grid"
 import { todayIn } from "~/lib/format"
 import { cn } from "~/lib/utils"
 
+import { FINE_PER_DAY } from "~/features/library/api"
+import { RouteMap } from "~/features/transport/components/route-map"
+
 import {
   childCalendarQuery,
   childHomeworkQuery,
+  childLibraryQuery,
   childTimetableQuery,
+  childTransportQuery,
   type PortalChild,
 } from "../api"
 import { withChild } from "../portal-nav"
@@ -254,5 +259,87 @@ export function TodayCard({ studentId }: { studentId: string }) {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+/** Home: the child's bus (route, stop, where it is) and library books out. */
+export function BusAndBooks({ studentId }: { studentId: string }) {
+  const t = useTranslations("portal.extras")
+  const f = useSchoolFormat()
+  const bus = useQuery(childTransportQuery(studentId))
+  const books = useQuery(childLibraryQuery(studentId))
+  const transport = bus.data?.transport
+  const stop = transport?.route.stops.find((s) => s.id === transport.stopId)
+  if (!transport && !books.data?.length) return null
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      {transport && stop && (
+        <Card className="min-w-0">
+          <CardHeader>
+            <CardTitle>
+              <h2>{transport.route.name}</h2>
+            </CardTitle>
+            <CardDescription>
+              {t("busStop", {
+                stop: stop.name,
+                pickup: stop.pickupTime ?? "—",
+                drop: stop.dropTime ?? "—",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <RouteMap
+              stops={transport.route.stops}
+              live={transport.live}
+              highlight={stop.id}
+            />
+            {transport.route.driverName && (
+              <p className="text-xs text-muted-foreground">
+                {t("driver", {
+                  name: transport.route.driverName,
+                  phone: transport.route.driverPhone ?? "",
+                  vehicle: transport.route.vehicleNumber ?? "",
+                })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      {books.data && books.data.length > 0 && (
+        <Card className="min-w-0">
+          <CardHeader>
+            <CardTitle>
+              <h2>{t("booksTitle")}</h2>
+            </CardTitle>
+            <CardDescription>
+              {t("booksHint", { fine: f.money(FINE_PER_DAY) })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col divide-y text-sm">
+              {books.data.map((b) => (
+                <li key={b.id} className="flex items-center gap-2 py-1.5">
+                  <span className="min-w-0 flex-1 truncate font-medium">
+                    {b.title}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      b.daysOverdue > 0
+                        ? "font-medium text-destructive"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {b.daysOverdue > 0
+                      ? t("overdue", { n: f.number(b.daysOverdue) })
+                      : t("due", { date: f.date(b.dueOn) })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }

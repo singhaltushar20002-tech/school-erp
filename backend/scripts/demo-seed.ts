@@ -1485,11 +1485,24 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     ];
     const cols: string[][] = [[], [], [], [], [], [], [], []];
     let shift = 0;
+    // A teacher is in one class per period: take the rotation's subject,
+    // else the next whose teacher is free; no one free leaves it empty.
+    const busy = new Set<string>();
     for (const [sectionId, subjects] of bySection) {
       shift++;
       days.forEach((day, d) =>
         periods.forEach((period, p) => {
-          const pick = subjects[(d * 3 + p + shift) % subjects.length];
+          const start = d * 3 + p + shift;
+          let pick: (typeof subjects)[number] | undefined;
+          for (let k = 0; k < subjects.length; k++) {
+            const c = subjects[(start + k) % subjects.length];
+            if (!busy.has(`${day}:${period.id}:${c.employee_id}`)) {
+              pick = c;
+              break;
+            }
+          }
+          if (!pick) return;
+          busy.add(`${day}:${period.id}:${pick.employee_id}`);
           cols[0].push(orgId);
           cols[1].push(pick.academic_year_id);
           cols[2].push(pick.class_id);
@@ -1775,6 +1788,258 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     }
     log(
       `  ${events.length} events, ${homework.length} homework, ${enquiries.length} enquiries`,
+    );
+  });
+
+  // Phase 5: staff register and leave, substitutes, transport, library
+  // and payroll.
+  await step('staff attendance, transport, library and payroll', async () => {
+    const staff = await root.query<
+      { id: string; first_name: string; title: string | null }[]
+    >(
+      `SELECT e.id, e.first_name, d.title FROM employees e
+         LEFT JOIN designations d ON d.id = e.designation_id
+        WHERE e.org_id = $1 AND e.status = 'active' ORDER BY e.first_name`,
+      [orgId],
+    );
+    // The last school day on or before today (Sunday off).
+    let lastDay = today;
+    while (new Date(`${lastDay}T00:00:00Z`).getUTCDay() === 0)
+      lastDay = addDays(lastDay, -1);
+    const monthStart = `${today.slice(0, 7)}-01`;
+    const prevStart = `${addDays(monthStart, -1).slice(0, 7)}-01`;
+    await root.query(
+      `INSERT INTO staff_attendance (org_id, employee_id, date, status, marked_by)
+       SELECT $1, e.id, d::date,
+              CASE WHEN r < 0.03 THEN 'absent' WHEN r < 0.07 THEN 'late'
+                   WHEN r < 0.08 THEN 'half_day' ELSE 'present' END,
+              $2
+         FROM employees e
+         CROSS JOIN generate_series($3::date, $4::date, interval '1 day') AS d
+         CROSS JOIN LATERAL (SELECT random() + 0 * length(e.id::text) + 0 * extract(day from d) AS r) x
+        WHERE e.org_id = $1 AND e.status = 'active' AND extract(isodow from d) <> 7`,
+      [orgId, owner.id, prevStart, lastDay],
+    );
+    // Two teachers away on the last school day: one absent, one on leave.
+    const byName = (first: string) =>
+      staff.find((x) => x.first_name === first)?.id;
+    const absent = byName('Jyoti');
+    const onLeave = byName('Rajeev');
+    if (absent) {
+      await put(admin, '/staff-attendance', {
+        date: lastDay,
+        records: [{ employeeId: absent, status: 'absent' }],
+      });
+    }
+    if (onLeave) {
+      await post(admin, '/staff-leaves', {
+        employeeId: onLeave,
+        fromDate: lastDay,
+        leaveType: 'casual',
+        reason: 'Family function',
+        approved: true,
+      });
+    }
+    const sick = byName('Vandana');
+    if (sick) {
+      await post(admin, '/staff-leaves', {
+        employeeId: sick,
+        fromDate: addDays(today, 2),
+        toDate: addDays(today, 3),
+        leaveType: 'sick',
+        reason: 'Doctor advised rest',
+      });
+    }
+    const uncovered = await get<{
+      periods: { timetableId: string; free: { id: string }[] }[];
+    }>(admin, `/substitutions?date=${lastDay}`);
+    const firstGap = uncovered.periods.find((x) => x.free.length);
+    if (firstGap) {
+      await put(admin, '/substitutions', {
+        date: lastDay,
+        timetableId: firstGap.timetableId,
+        employeeId: firstGap.free[0].id,
+      });
+    }
+
+    // Transport: three routes in Lucknow, students on their stops.
+    const routes: [
+      string,
+      string,
+      string,
+      string,
+      number,
+      [string, string, string][],
+    ][] = [
+      [
+        'Route 1: Gomti Nagar',
+        'UP32 AB 1234',
+        'Ramesh Yadav',
+        '9839012345',
+        1200_00,
+        [
+          ['Patrakarpuram', '07:00', '14:50'],
+          ['Vibhuti Khand', '07:08', '14:42'],
+          ['Indira Gandhi Pratishthan', '07:16', '14:34'],
+          ['Chinhat Tiraha', '07:25', '14:25'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+      [
+        'Route 2: Indira Nagar',
+        'UP32 CD 5678',
+        'Suresh Kumar',
+        '9839023456',
+        1100_00,
+        [
+          ['Munshi Pulia', '07:05', '14:45'],
+          ['Lekhraj Market', '07:12', '14:38'],
+          ['Bhootnath', '07:20', '14:30'],
+          ['Kapoorthala', '07:28', '14:22'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+      [
+        'Route 3: Aliganj',
+        'UP32 EF 9012',
+        'Dinesh Pal',
+        '9839034567',
+        1000_00,
+        [
+          ['Puraniya', '07:02', '14:48'],
+          ['Sector Q', '07:10', '14:40'],
+          ['Kursi Road', '07:18', '14:32'],
+          ['Kapoorthala Chauraha', '07:27', '14:23'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+    ];
+    const stopIds: string[] = [];
+    for (const [name, vehicle, driver, phone, fee, stops] of routes) {
+      const r = await post<{ stops: { id: string; name: string }[] }>(
+        admin,
+        '/transport/routes',
+        {
+          name,
+          vehicleNumber: vehicle,
+          driverName: driver,
+          driverPhone: phone,
+          monthlyFee: fee,
+          stops: stops.map(([n, pickupTime, dropTime]) => ({
+            name: n,
+            pickupTime,
+            dropTime,
+          })),
+        },
+      );
+      stopIds.push(
+        ...r.stops.filter((x) => x.name !== 'School gate').map((x) => x.id),
+      );
+    }
+    const riders = await root.query<{ id: string }[]>(
+      `SELECT s.id FROM students s
+        WHERE s.org_id = $1 AND (
+          s.id IN (SELECT sg.student_id FROM student_guardians sg JOIN guardians g ON g.id = sg.guardian_id
+                    WHERE g.org_id = $1 AND g.phone = $2)
+          OR random() < 0.12)
+        LIMIT 90`,
+      [orgId, `+91${PARENT_PHONE}`],
+    );
+    await root.query(
+      `INSERT INTO transport_assignments (org_id, student_id, stop_id)
+       SELECT $1, s, ($3::uuid[])[1 + (row_number() OVER () % cardinality($3::uuid[]))]
+         FROM unnest($2::uuid[]) AS s
+       ON CONFLICT DO NOTHING`,
+      [orgId, riders.map((r) => r.id), stopIds],
+    );
+    const billed = await post<{ created: number }>(
+      admin,
+      '/transport/billing',
+      {
+        period: today.slice(0, 7),
+      },
+    );
+    log(
+      `  ${riders.length} students on 3 routes, ${billed.created} transport bills`,
+    );
+
+    // Library: a small catalogue and books out, some overdue.
+    const books: [string, string, string, number][] = [
+      ['Malgudi Days', 'R. K. Narayan', 'Fiction', 3],
+      ['The Blue Umbrella', 'Ruskin Bond', 'Fiction', 3],
+      ['Panchatantra Stories', 'Vishnu Sharma', 'Stories', 4],
+      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Biography', 2],
+      ['Godaan', 'Munshi Premchand', 'Hindi', 2],
+      ['Rusty Runs Away', 'Ruskin Bond', 'Fiction', 2],
+      ['Tenali Raman Tales', 'Various', 'Stories', 3],
+      ['Discovery of India', 'Jawaharlal Nehru', 'History', 1],
+      ['NCERT Science Activity Book', 'NCERT', 'Reference', 3],
+      ['Oxford Student Atlas for India', 'Oxford', 'Reference', 2],
+      ['Swami and Friends', 'R. K. Narayan', 'Fiction', 2],
+      ['Akbar Birbal Stories', 'Various', 'Stories', 3],
+    ];
+    const accessions: string[] = [];
+    for (const [title, author, category, copies] of books) {
+      const b = await post<{ accessions: string[] }>(admin, '/library/books', {
+        title,
+        author,
+        category,
+        copies,
+      });
+      accessions.push(b.accessions[0]);
+    }
+    const readers = await root.query<{ admission_number: string }[]>(
+      `SELECT s.admission_number FROM students s
+        WHERE s.org_id = $1 AND (
+          s.id IN (SELECT sg.student_id FROM student_guardians sg JOIN guardians g ON g.id = sg.guardian_id
+                    WHERE g.org_id = $1 AND g.phone = $2)
+          OR random() < 0.02)
+        LIMIT 12`,
+      [orgId, `+91${PARENT_PHONE}`],
+    );
+    for (const [i, r] of readers.entries()) {
+      if (!accessions[i]) break;
+      await post(admin, '/library/issues', {
+        accessionNo: accessions[i],
+        studentId: r.admission_number,
+      });
+    }
+    // Back-date a third of the loans so some are overdue.
+    await root.query(
+      `UPDATE library_issues SET issued_on = $2::date - 24, due_on = $2::date - 10
+        WHERE id IN (SELECT id FROM library_issues WHERE org_id = $1 ORDER BY id LIMIT 4)`,
+      [orgId, today],
+    );
+
+    // Payroll: everyone's salary, and last month's payroll finalised.
+    for (const p of staff) {
+      const senior = /principal|head|vice/i.test(p.title ?? '');
+      const teacher = /teacher/i.test(p.title ?? '') || !p.title;
+      const basic = senior
+        ? 55_000_00
+        : teacher
+          ? 26_000_00 + (p.first_name.length % 5) * 1_500_00
+          : 14_000_00;
+      await put(admin, `/payroll/structures/${p.id}`, {
+        basic,
+        hra: Math.round(basic * 0.4),
+        da: Math.round(basic * 0.12),
+        otherAllowances: teacher || senior ? 2_000_00 : 1_000_00,
+        pfApplicable: true,
+        esiApplicable: basic * 1.52 + 1_000_00 <= 21_000_00,
+        tdsMonthly: senior ? 6_500_00 : basic >= 30_000_00 ? 1_200_00 : 0,
+      });
+    }
+    const run = await post<{ id: string; payslips: unknown[] }>(
+      admin,
+      '/payroll/runs',
+      {
+        period: prevStart.slice(0, 7),
+      },
+    );
+    await post(admin, `/payroll/runs/${run.id}/finalize`);
+    log(
+      `  ${books.length} titles, ${readers.length} loans; payroll for ${prevStart.slice(0, 7)}: ${run.payslips.length} payslips`,
     );
   });
 
