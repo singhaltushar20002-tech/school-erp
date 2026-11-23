@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
 
+import { runExport } from "~/features/exports/export-button"
 import { apiFetch, apiFetchPage } from "~/lib/api/client"
 
 // Exams for staff (backend `exams`): mark sheets per subject and section,
@@ -327,3 +328,79 @@ export const saveCoScholastic = (
     method: "PUT",
     body: grades,
   })
+
+// Results screen (`/dashboard/exams/results`).
+
+export interface MeritRow extends ResultRow {
+  studentId: string
+  admissionNumber: string
+  gpa: number | null
+  failedCount: number
+  positionSection: number | null
+  positionClass: number | null
+}
+
+export interface SubjectAnalysis {
+  classSubjectId: string
+  subjectName: string
+  sat: number
+  absent: number
+  passed: number
+  failed: number
+  passRate: number
+  average: number
+  highest: number
+  lowest: number
+  grades: Record<string, number>
+}
+
+export const RESULT_SHEETS = [
+  "merit",
+  "tabulation",
+  "failed",
+  "analysis",
+] as const
+export type ResultSheet = (typeof RESULT_SHEETS)[number]
+
+export const meritListQuery = (definitionId: string) =>
+  queryOptions({
+    queryKey: ["exams", "merit", definitionId] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<MeritRow[]>(`/result-definitions/${definitionId}/merit-list`, {
+        signal,
+      }),
+    enabled: Boolean(definitionId),
+  })
+
+export const analysisQuery = (definitionId: string) =>
+  queryOptions({
+    queryKey: ["exams", "analysis", definitionId] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<SubjectAnalysis[]>(
+        `/result-definitions/${definitionId}/analysis`,
+        { signal }
+      ),
+    enabled: Boolean(definitionId),
+  })
+
+/** Computes totals, grades and positions (a job) once every sheet is approved. */
+export async function tabulateResults(definitionId: string): Promise<void> {
+  type Job = { id: string; status: string; error?: string | null }
+  const started = await apiFetch<Job | { job: Job }>(
+    `/result-definitions/${definitionId}/tabulate`,
+    { method: "POST", body: {} }
+  )
+  let job = "job" in started ? started.job : started
+  for (let i = 0; i < 120 && job.status !== "succeeded"; i++) {
+    if (job.status === "failed") throw new Error(job.error ?? "failed")
+    await new Promise((r) => setTimeout(r, 1000))
+    job = await apiFetch<Job>(`/jobs/${job.id}`)
+  }
+}
+
+/** A result sheet as Excel or PDF; resolves with the download link. */
+export const exportResults = (
+  definitionId: string,
+  type: ResultSheet,
+  format: "xlsx" | "pdf"
+) => runExport(`/result-definitions/${definitionId}/exports`, { type, format })

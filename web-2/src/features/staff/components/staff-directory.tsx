@@ -57,6 +57,7 @@ import {
   type FormValues,
 } from "~/features/academics/components/setup-table"
 import { useSchoolFormat } from "~/features/settings/use-school-format"
+import { useRoleLabel } from "~/features/shell/role-label"
 import { isApiError } from "~/lib/api/errors"
 
 import {
@@ -69,7 +70,6 @@ import {
   EMPLOYMENT_TYPES,
   GENDERS,
   inviteEmployee,
-  isSystemRole,
   staffKeys,
   staffRolesQuery,
   updateEmployee,
@@ -521,7 +521,7 @@ function InviteDialog({
   onDone: () => Promise<unknown>
 }) {
   const t = useTranslations("staffSetup.directory")
-  const tr = useTranslations("staffSetup.roles")
+  const roleLabel = useRoleLabel()
   const roles = useQuery(staffRolesQuery())
   const [picked, setPicked] = useState<Set<string>>(
     new Set(defaultRoleId ? [defaultRoleId] : [])
@@ -541,7 +541,7 @@ function InviteDialog({
       }),
   })
   const label = (name: string, isSystem: boolean) =>
-    isSystem && isSystemRole(name) ? tr(name) : name
+    isSystem ? roleLabel(name) : name
 
   return (
     <Dialog open onOpenChange={(o) => !o && !send.isPending && onClose()}>

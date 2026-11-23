@@ -174,18 +174,3 @@ export const inviteEmployee = (id: string, roleIds: string[]) =>
     method: "POST",
     body: roleIds.length ? { roleIds } : {},
   })
-
-/** System roles with a translated label (`staffSetup.roles`). */
-export const SYSTEM_ROLES = [
-  "admin",
-  "principal",
-  "accountant",
-  "teacher",
-  "class_teacher",
-  "receptionist",
-  "librarian",
-  "committee_member",
-] as const
-export type SystemRole = (typeof SYSTEM_ROLES)[number]
-export const isSystemRole = (name: string): name is SystemRole =>
-  (SYSTEM_ROLES as readonly string[]).includes(name)

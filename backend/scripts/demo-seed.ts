@@ -2214,6 +2214,94 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     );
   });
 
+  // Running costs from April to this month, so the expense list and the
+  // cash and bank books show money going out as well as coming in.
+  await step('expenses', async () => {
+    const categories: Record<string, string> = {};
+    for (const name of [
+      'Electricity',
+      'Water',
+      'Stationery & printing',
+      'Repairs & maintenance',
+      'Bus fuel',
+      'Events & functions',
+      'Internet & phone',
+    ]) {
+      categories[name] = (
+        await post(accountant, '/expenses/categories', { name })
+      ).id;
+    }
+    const monthly: [string, number, 'cash' | 'bank', number, string][] = [
+      ['Electricity', 4_200_000, 'bank', 6, 'UPPCL bill'],
+      ['Water', 380_000, 'bank', 8, 'Jal Kal bill'],
+      ['Internet & phone', 299_900, 'bank', 5, 'Broadband and office phone'],
+      ['Bus fuel', 6_500_000, 'cash', 3, 'Diesel for 3 buses'],
+      [
+        'Stationery & printing',
+        850_000,
+        'cash',
+        12,
+        'Registers, chalk, printer toner',
+      ],
+    ];
+    const end = today;
+    for (let m = 4; m <= 11; m++) {
+      const month = `2026-${pad(m)}`;
+      for (const [category, amount, paidFrom, day, note] of monthly) {
+        const date = `${month}-${pad(day)}`;
+        if (date > end) continue;
+        // A little month-to-month variation, as real bills have.
+        const varied = Math.round((amount * (90 + ((m * day) % 21))) / 100);
+        await post(accountant, '/expenses', {
+          categoryId: categories[category],
+          amount: varied,
+          paidFrom,
+          date,
+          note,
+        });
+      }
+    }
+    for (const [category, amount, paidFrom, date, note] of [
+      [
+        'Repairs & maintenance',
+        1_850_000,
+        'cash',
+        '2026-06-20',
+        'Classroom fans and wiring',
+      ],
+      [
+        'Events & functions',
+        4_500_000,
+        'bank',
+        '2026-08-14',
+        'Independence Day celebration',
+      ],
+      [
+        'Repairs & maintenance',
+        2_400_000,
+        'bank',
+        '2026-10-05',
+        'Painting of junior block',
+      ],
+      [
+        'Events & functions',
+        6_200_000,
+        'bank',
+        '2026-11-14',
+        "Children's Day and annual sports",
+      ],
+    ] as const) {
+      if (date > end) continue;
+      await post(accountant, '/expenses', {
+        categoryId: categories[category],
+        amount,
+        paidFrom,
+        date,
+        note,
+      });
+    }
+  });
+
   await step('circulars', async () => {
     await post(admin, '/notices', {
       title: 'Winter break and school timings',

@@ -10,12 +10,12 @@ import {
   text,
 } from "~/features/academics/components/setup-table"
 import { useSchoolFormat } from "~/features/settings/use-school-format"
+import { useRoleLabel } from "~/features/shell/role-label"
 
 import {
   allEmployeesQuery,
   departmentsApi,
   designationsApi,
-  isSystemRole,
   staffKeys,
   staffRolesQuery,
   type Department,
@@ -113,13 +113,13 @@ export function DepartmentsScreen() {
 export function DesignationsScreen() {
   const t = useTranslations("staffSetup.designations")
   const f = useSchoolFormat()
-  const tr = useTranslations("staffSetup.roles")
+  const roleLabel = useRoleLabel()
   const counts = useHeadcount("designationId")
   const roles = useQuery(staffRolesQuery())
   const roleName = (id: string | null) => {
     const role = roles.data?.find((r) => r.id === id)
     if (!role) return "—"
-    return role.isSystem && isSystemRole(role.name) ? tr(role.name) : role.name
+    return role.isSystem ? roleLabel(role.name) : role.name
   }
   return (
     <SetupTable<Designation>

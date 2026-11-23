@@ -54,6 +54,8 @@ describe("message catalogs", () => {
         "fees.channels.upi",
         // An accession number format, the same in every language.
         "library.accessionPlaceholder",
+        // An example web address, the same in every language.
+        "domainsScreen.hostnamePlaceholder",
         "fees.log.byMode.upi",
         "common.languages.en",
         "findSchool.addressPlaceholder",
