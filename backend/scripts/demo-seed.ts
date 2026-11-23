@@ -571,6 +571,44 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
       '/classes?limit=100',
     );
     for (const c of classes) classIds[c.level] = c.id;
+    // Two terms, as most CBSE schools report them.
+    for (const [i, term] of [
+      ['Term 1', YEAR_START, '2026-09-30'],
+      ['Term 2', '2026-10-01', YEAR_END],
+    ].entries()) {
+      await post(admin, '/terms', {
+        academicYearId: ids.year,
+        name: term[0],
+        startDate: term[1],
+        endDate: term[2],
+        sortOrder: i + 1,
+      });
+    }
+    // Rooms: a home room per section (floor by class) plus shared ones.
+    const roomIds: Record<string, string> = {};
+    for (let c = 1; c <= CLASSES; c++) {
+      for (const [i, name] of SECTIONS.entries()) {
+        const number = `${Math.ceil(c / 4)}${pad(((c - 1) % 4) * 2 + i + 1)}`;
+        roomIds[`${c}:${name}`] = (
+          await post(admin, '/rooms', {
+            name: `Room ${number}`,
+            building: c <= 5 ? 'Junior block' : 'Senior block',
+            capacity: 45,
+            type: 'classroom',
+          })
+        ).id;
+      }
+    }
+    for (const room of [
+      { name: 'Physics lab', type: 'lab', capacity: 30 },
+      { name: 'Chemistry lab', type: 'lab', capacity: 30 },
+      { name: 'Biology lab', type: 'lab', capacity: 30 },
+      { name: 'Computer lab', type: 'lab', capacity: 40 },
+      { name: 'Assembly hall', type: 'hall', capacity: 600 },
+      { name: 'Library', type: 'library', capacity: 60 },
+    ]) {
+      await post(admin, '/rooms', { ...room, building: 'Senior block' });
+    }
     for (let c = 1; c <= CLASSES; c++) {
       for (const name of SECTIONS) {
         sectionIds[`${c}:${name}`] = (
@@ -578,10 +616,26 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
             academicYearId: ids.year,
             classId: classIds[c],
             name,
+            roomId: roomIds[`${c}:${name}`],
+            capacity: 45,
           })
         ).id;
       }
     }
+    // Periods a week and pass/full marks for every class subject.
+    await root.query(
+      `UPDATE class_subjects cs SET
+         weekly_classes = CASE
+           WHEN s.name IN ('Mathematics', 'English', 'Science') THEN 6
+           WHEN s.name IN ('Hindi', 'Social Science', 'Physics', 'Chemistry',
+             'Biology', 'Accountancy', 'Business Studies', 'Economics') THEN 5
+           WHEN s.name = 'Environmental Studies' THEN 4
+           ELSE 2 END,
+         full_marks = 100, pass_marks = 33
+       FROM subjects s
+       WHERE s.id = cs.subject_id AND cs.academic_year_id = $1`,
+      [ids.year],
+    );
   });
 
   // Staff: 30 people, a class teacher for each of the 24 sections.
