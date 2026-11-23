@@ -854,6 +854,123 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
   // Fees: class-wise structures, concessions, a late fine.
   const heads: Record<string, string> = {};
   const discount: Record<string, string> = {};
+  // Departments by subject and designations by level (PRT/TGT/PGT), with
+  // each designation's default role for future invites.
+  await step('departments and designations', async () => {
+    const roles = await get<{ id: string; name: string }[]>(
+      admin,
+      '/roles?limit=100',
+    );
+    const roleId = (name: string) => roles.find((r) => r.name === name)?.id;
+    const departments: Record<string, string> = {};
+    for (const [name, code] of [
+      ['Science', 'SCI'],
+      ['Mathematics', 'MATH'],
+      ['Languages', 'LANG'],
+      ['Social Science', 'SST'],
+      ['Commerce', 'COM'],
+      ['Arts & Sports', 'ART'],
+      ['Primary', 'PRI'],
+      ['Administration', 'ADM'],
+      ['Accounts', 'ACC'],
+      ['Library', 'LIB'],
+    ]) {
+      departments[name] = (
+        await post(admin, '/departments', { name, code })
+      ).id;
+    }
+    const designations: Record<string, string> = {};
+    for (const [title, role, description] of [
+      ['Principal', 'principal', 'Head of the school'],
+      ['PGT', 'teacher', 'Post-graduate teacher (classes 11–12)'],
+      ['TGT', 'teacher', 'Trained graduate teacher (classes 6–10)'],
+      ['PRT', 'teacher', 'Primary teacher (classes 1–5)'],
+      ['Accountant', 'accountant', 'Fees and payroll'],
+      ['Office Assistant', 'receptionist', 'Front desk and admissions'],
+      ['Librarian', 'librarian', 'Library'],
+    ]) {
+      designations[title] = (
+        await post(admin, '/designations', {
+          title,
+          description,
+          defaultRoleId: roleId(role),
+        })
+      ).id;
+    }
+    const set = (email: string, designation: string, department: string) =>
+      root.query(
+        `UPDATE employees SET designation_id = $3, department_id = $4,
+           employment_type = 'permanent', qualification = $5
+          WHERE org_id = $1 AND email = $2`,
+        [
+          orgId,
+          email,
+          designations[designation],
+          departments[department],
+          designation === 'Principal' ? 'M.Sc., B.Ed.' : 'B.Com.',
+        ],
+      );
+    await set(`principal@${EMAIL_DOMAIN}`, 'Principal', 'Administration');
+    await set(`accounts@${EMAIL_DOMAIN}`, 'Accountant', 'Accounts');
+    await set(`office@${EMAIL_DOMAIN}`, 'Office Assistant', 'Administration');
+    await set(`library@${EMAIL_DOMAIN}`, 'Librarian', 'Library');
+    // Teachers: level from their class-teacher section (else the highest
+    // class they teach), department from the subject they teach most.
+    const teachers = await root.query<
+      { id: string; top: number | null; subject: string | null }[]
+    >(
+      `SELECT e.id,
+              COALESCE((SELECT c.level FROM class_teachers ct
+                 JOIN sections sec ON sec.id = ct.section_id
+                 JOIN classes c ON c.id = sec.class_id
+                WHERE ct.employee_id = e.id AND ct.effective_to IS NULL
+                LIMIT 1),
+              (SELECT max(c.level) FROM subject_teachers st
+                 JOIN sections sec ON sec.id = st.section_id
+                 JOIN classes c ON c.id = sec.class_id
+                WHERE st.employee_id = e.id AND st.effective_to IS NULL)) AS top,
+              (SELECT s.name FROM subject_teachers st
+                 JOIN class_subjects cs ON cs.id = st.class_subject_id
+                 JOIN subjects s ON s.id = cs.subject_id
+                WHERE st.employee_id = e.id AND st.effective_to IS NULL
+                GROUP BY s.name ORDER BY count(*) DESC, s.name LIMIT 1) AS subject
+         FROM employees e
+        WHERE e.org_id = $1 AND e.phone LIKE '90060%'`,
+      [orgId],
+    );
+    const departmentOf = (subject: string | null, top: number | null) => {
+      const s = subject ?? '';
+      if ((top ?? 0) <= 5) return 'Primary';
+      if (/Math/.test(s)) return 'Mathematics';
+      if (/Science|Physics|Chemistry|Biology|Computer/.test(s))
+        return /Social/.test(s) ? 'Social Science' : 'Science';
+      if (/English|Hindi|Sanskrit/.test(s)) return 'Languages';
+      if (/Accountancy|Business|Economics/.test(s)) return 'Commerce';
+      if (/History|Geography|Political/.test(s)) return 'Social Science';
+      return 'Arts & Sports';
+    };
+    for (const [i, t] of teachers.entries()) {
+      const level = t.top ?? 6;
+      await root.query(
+        `UPDATE employees SET designation_id = $2, department_id = $3,
+           employment_type = $4, qualification = $5 WHERE id = $1`,
+        [
+          t.id,
+          designations[level >= 11 ? 'PGT' : level >= 6 ? 'TGT' : 'PRT'],
+          departments[departmentOf(t.subject, t.top)],
+          i % 9 === 8 ? 'contract' : 'permanent',
+          level >= 11 ? 'M.A./M.Sc., B.Ed.' : 'B.A./B.Sc., B.Ed.',
+        ],
+      );
+    }
+    // Next year's session, so Promotions has somewhere to go.
+    await post(admin, '/academic-years', {
+      name: '2027–2028',
+      startDate: '2027-04-01',
+      endDate: '2028-03-31',
+    });
+  });
+
   await step('fee structures, concessions and late fine', async () => {
     for (const h of await get<{ id: string; name: string }[]>(
       admin,

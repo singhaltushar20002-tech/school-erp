@@ -11,8 +11,8 @@ export const E2E = {
   mailpit: process.env.E2E_MAILPIT_URL ?? "http://localhost:8025/api/v1",
   /** The seeded platform super-admin (`npm run db:seed:core`). */
   admin: {
-    email: process.env.E2E_ADMIN_EMAIL ?? "admin@biprodas.dev",
-    password: process.env.E2E_ADMIN_PASSWORD ?? "sadmin@123",
+    email: process.env.E2E_ADMIN_EMAIL ?? "superadmin@platform.test",
+    password: process.env.E2E_ADMIN_PASSWORD ?? "Admin@1234",
   },
   /** Against `next start`: bundle-size and CSP-strictness checks apply. */
   production: process.env.E2E_PRODUCTION === "true",
