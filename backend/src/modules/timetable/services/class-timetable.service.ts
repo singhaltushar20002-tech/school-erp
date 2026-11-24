@@ -105,8 +105,10 @@ export class ClassTimetableService {
       await this.employeeService.findById(dto.employeeId);
     }
 
-    Object.assign(entity, dto);
-    await this.timetableRepo.save(entity);
+    await this.timetableRepo.updateFields(id, {
+      ...(dto.subjectId ? { subjectId: dto.subjectId } : {}),
+      ...(dto.employeeId ? { employeeId: dto.employeeId } : {}),
+    });
     return this.findById(id);
   }
 

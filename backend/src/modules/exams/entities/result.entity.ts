@@ -94,6 +94,13 @@ export class Result extends OrgScopedEntity {
   @Column({ name: 'remarks_by', type: 'uuid', nullable: true })
   remarksBy: string | null;
 
+  /**
+   * Co-scholastic grades by area (`work_education: 'A'`, …), set by the
+   * class teacher for board report cards; kept across tabulations.
+   */
+  @Column({ name: 'co_scholastic', type: 'jsonb', nullable: true })
+  coScholastic: Record<string, string> | null;
+
   /** The student's last report card PDF. */
   @Column({ name: 'report_card_file_id', type: 'uuid', nullable: true })
   reportCardFileId: string | null;

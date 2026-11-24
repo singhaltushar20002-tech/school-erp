@@ -13,6 +13,7 @@ import { RequestContext } from '~/shared/request-context/request-context.service
 import {
   buildTemplate,
   parseSheet,
+  readHeaders,
   type RowError,
 } from '~/shared/spreadsheet/spreadsheet';
 import { TENANT_DATASOURCE } from '~/tenancy/tenancy.constants';
@@ -39,6 +40,7 @@ import {
 import { ImportMode, ImportStatus, ImportType } from '../enums/import.enum';
 import { ImportRepository } from '../import.repository';
 import type { ImportContext, Importer } from '../importers/importer';
+import { OpeningBalanceImporter } from '../importers/opening-balance.importer';
 import { MarksImporter } from '../importers/marks.importer';
 import { StaffImporter } from '../importers/staff.importer';
 import { StudentImporter } from '../importers/student.importer';
@@ -49,6 +51,7 @@ const SHEET_NAMES: Record<ImportType, string> = {
   [ImportType.STUDENTS]: 'Students',
   [ImportType.STAFF]: 'Staff',
   [ImportType.MARKS]: 'Marks',
+  [ImportType.OPENING_BALANCES]: 'Opening balances',
 };
 export const IMPORT_COMMIT_JOB = 'commit';
 
@@ -73,6 +76,7 @@ export class ImportService {
     private readonly studentImporter: StudentImporter,
     private readonly staffImporter: StaffImporter,
     private readonly marksImporter: MarksImporter,
+    private readonly openingBalanceImporter: OpeningBalanceImporter,
     @Inject(TENANT_DATASOURCE) private readonly ds: TenantDataSourceProxy,
   ) {}
 
@@ -136,6 +140,8 @@ export class ImportService {
       totals: null,
       errors: [],
       rows: [],
+      columnMap: null,
+      fileHeaders: null,
       failure: null,
       createdBy: this.context.current().userId,
       committedAt: null,
@@ -148,6 +154,72 @@ export class ImportService {
       options: { attempts: 1 },
     });
     return { import: batch, job };
+  }
+
+  /**
+   * The template's columns next to the file's headers, for matching a
+   * file whose headers differ from the template.
+   */
+  async columnsOf(id: string) {
+    const batch = await this.findById(id);
+    const importer = await this.importer(batch.type);
+    const ctx = this.ctx(batch);
+    await this.assertMay(importer, ctx);
+    let fileHeaders = batch.fileHeaders;
+    if (!fileHeaders && batch.fileId) {
+      const { buffer, mime } = await this.files.read(batch.fileId);
+      fileHeaders = await readHeaders(
+        buffer,
+        mime === MIME.csv ? 'csv' : 'xlsx',
+      );
+    }
+    return {
+      expected: (await importer.columns(ctx)).map((c) => ({
+        header: c.header,
+        required: Boolean(c.required),
+      })),
+      fileHeaders: fileHeaders ?? [],
+      columnMap: batch.columnMap ?? {},
+    };
+  }
+
+  /** Saves how the file's columns match the template and checks it again. */
+  async remap(
+    id: string,
+    columnMap: Record<string, string>,
+  ): Promise<{ import: ImportBatch; job: Job }> {
+    const batch = await this.findById(id);
+    await this.assertMay(await this.importer(batch.type), this.ctx(batch));
+    if (
+      batch.status !== ImportStatus.FAILED &&
+      batch.status !== ImportStatus.VALIDATED
+    ) {
+      throw new ConflictException({
+        message: `The import is ${batch.status}`,
+        code: 'IMPORT_NOT_REMAPPABLE',
+      });
+    }
+    const clean = Object.fromEntries(
+      Object.entries(columnMap)
+        .filter(([k, v]) => typeof k === 'string' && typeof v === 'string')
+        .map(([k, v]) => [k.slice(0, 120), v.slice(0, 120)]),
+    );
+    await this.importRepo.updateFields(id, {
+      columnMap: clean,
+      status: ImportStatus.UPLOADED,
+      failure: null,
+      errors: [],
+      rows: [],
+      totals: null,
+    });
+    const job = await this.jobs.start<{ importId: string }>({
+      type: `imports.${batch.type}.validate`,
+      queue: QUEUES.imports,
+      name: IMPORT_VALIDATE_JOB,
+      data: { importId: id },
+      options: { attempts: 1 },
+    });
+    return { import: await this.findById(id), job };
   }
 
   /** Queues the commit of a validated import. */
@@ -197,12 +269,18 @@ export class ImportService {
       const importer = await this.importer(batch.type);
       const ctx = this.ctx(batch);
       const { buffer, mime } = await this.files.read(batch.fileId!);
+      const format = mime === MIME.csv ? 'csv' : 'xlsx';
       const parsed = await parseSheet(
         buffer,
         await importer.columns(ctx),
-        mime === MIME.csv ? 'csv' : 'xlsx',
+        format,
+        batch.columnMap,
       );
       if (parsed.errors.some((e) => e.code === 'MISSING_COLUMN')) {
+        // Kept so the columns can be matched by hand (`POST :id/columns`).
+        await this.importRepo.updateFields(id, {
+          fileHeaders: await readHeaders(buffer, format),
+        });
         return this.fail(
           id,
           'The file is missing required columns',
@@ -333,6 +411,8 @@ export class ImportService {
       [ImportType.STUDENTS]: this.studentImporter as unknown as Importer,
       [ImportType.STAFF]: this.staffImporter as unknown as Importer,
       [ImportType.MARKS]: this.marksImporter as unknown as Importer,
+      [ImportType.OPENING_BALANCES]: this
+        .openingBalanceImporter as unknown as Importer,
     };
     return Promise.resolve(importers[type]);
   }

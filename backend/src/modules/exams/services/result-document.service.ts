@@ -15,7 +15,7 @@ export const RESULT_EXPORT_JOB = 'result-export';
 export interface ReportCardsJobData {
   resultDefinitionId: string;
   sectionId: string;
-  language: 'en' | 'bn';
+  language: 'en' | 'hi' | 'bn';
 }
 
 export interface ResultExportJobData extends ResultExportDto {

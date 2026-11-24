@@ -266,6 +266,40 @@ export const PERMISSIONS = {
   /** Notification templates. */
   COMMUNICATION_MANAGE: 'communication:manage',
 
+  // School calendar, homework and admission enquiries
+  /** Add and edit school events on the calendar (reading needs `holidays:read`). */
+  EVENTS_MANAGE: 'events:manage',
+  /** Homework and who has handed it in (assigned scope: own subjects). */
+  HOMEWORK_READ: 'homework:read',
+  /** Set homework and mark submissions (assigned scope: own subjects). */
+  HOMEWORK_MANAGE: 'homework:manage',
+  /** Admission enquiries and their follow-ups. */
+  ENQUIRIES_READ: 'enquiries:read',
+  ENQUIRIES_MANAGE: 'enquiries:manage',
+
+  // Staff attendance, leave and substitute teachers
+  /** Mark and read the daily staff register. */
+  STAFF_ATTENDANCE_MANAGE: 'staff_attendance:manage',
+  /** Record staff leave and approve or reject it. */
+  STAFF_LEAVES_APPROVE: 'staff_leaves:approve',
+  /** Assign substitutes for absent teachers' periods. */
+  SUBSTITUTIONS_MANAGE: 'substitutions:manage',
+
+  // Transport
+  TRANSPORT_READ: 'transport:read',
+  /** Routes, stops, students on stops, transport billing. */
+  TRANSPORT_MANAGE: 'transport:manage',
+
+  // Library
+  LIBRARY_READ: 'library:read',
+  /** Catalogue, issue and return, fines. */
+  LIBRARY_MANAGE: 'library:manage',
+
+  // Payroll
+  PAYROLL_READ: 'payroll:read',
+  /** Salary structures, payroll runs, payslips. */
+  PAYROLL_MANAGE: 'payroll:manage',
+
   // Role dashboards (PRD 6.22)
   DASHBOARD_ADMIN: 'dashboard_admin:read',
   DASHBOARD_TEACHER: 'dashboard_teacher:read',

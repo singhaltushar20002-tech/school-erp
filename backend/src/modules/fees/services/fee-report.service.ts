@@ -408,6 +408,33 @@ export class FeeReportService {
     return sent;
   }
 
+  /**
+   * A reminder now to the families of chosen students (one group of the
+   * dues report, e.g. 60+ days): one `fees.due_reminder` event per student
+   * who still has something overdue, with the overdue total and the oldest
+   * due date. Students outside the caller's sections or with nothing
+   * overdue are skipped.
+   */
+  async remindStudents(studentIds: string[], allowed: string[] | null) {
+    const { students } = await this.dues({}, allowed);
+    const byId = new Map(students.map((s) => [s.studentId, s]));
+    let sent = 0;
+    for (const id of new Set(studentIds)) {
+      const s = byId.get(id);
+      if (!s || s.overdue <= 0) continue;
+      await this.events.record(DOMAIN_EVENTS.FEES_DUE_REMINDER, {
+        invoiceId: null,
+        invoiceNumber: '',
+        studentId: s.studentId,
+        dueDate: s.oldestDueDate,
+        outstanding: s.overdue,
+        reminder: 0,
+      });
+      sent++;
+    }
+    return { sent, skipped: new Set(studentIds).size - sent };
+  }
+
   private dueRows(
     query: DuesQueryDto,
     allowed: string[] | null,

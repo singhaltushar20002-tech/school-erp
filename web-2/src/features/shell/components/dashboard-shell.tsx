@@ -45,7 +45,7 @@ export function DashboardShell({
       style={brandStyle(display.data?.colors.primary) as React.CSSProperties}
     >
       <AppSidebar fallbackName={schoolName} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-3 backdrop-blur supports-backdrop-filter:bg-background/80 sm:px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator

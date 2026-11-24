@@ -1,0 +1,34 @@
+<div class='slip'>
+  <div class='head'>
+    {{#if lh.logo}}<img class='logo' src='{{lh.logo}}' />{{/if}}
+    <div>
+      <div class='school'>{{lh.name}}</div>
+      {{#if lh.address}}<div class='small'>{{lh.address}}</div>{{/if}}
+      {{#if lh.contact}}<div class='small'>{{lh.contact}}</div>{{/if}}
+    </div>
+  </div>
+  <div class='title'>Payslip for {{month}}</div>
+  <table class='info'>
+    <tr><td>Name: <b>{{name}}</b></td><td>Employee no.:
+        <b>{{employeeNumber}}</b></td></tr>
+    <tr><td>Designation: <b>{{designation}}</b></td><td>Days in month:
+        <b>{{days}}</b>
+        · Loss of pay:
+        <b>{{lop}}</b></td></tr>
+  </table>
+  <table class='pay'>
+    <thead><tr><th>Earnings</th><th class='r'>Amount</th><th>Deductions</th><th
+          class='r'
+        >Amount</th></tr></thead>
+    <tbody>
+      {{#each rows}}
+        <tr><td>{{this.e}}</td><td class='r'>{{this.ea}}</td><td
+          >{{this.d}}</td><td class='r'>{{this.da}}</td></tr>
+      {{/each}}
+      <tr class='total'><td>Gross earnings</td><td class='r'>{{gross}}</td><td
+        >Total deductions</td><td class='r'>{{deductions}}</td></tr>
+    </tbody>
+  </table>
+  <div class='net'>Net pay: <b>{{net}}</b></div>
+  <div class='foot'>This is a computer-generated payslip and needs no signature.</div>
+</div>

@@ -14,7 +14,8 @@ const IMAGES = [MIME.png, MIME.jpeg, MIME.webp] as const;
  * What can be stored, per use. Uploads are checked against their purpose:
  * the sniffed type must be listed and the size within `maxBytes` (and within
  * `UPLOAD_MAX_BYTES`). `generated` is for files the server creates
- * (exports, PDFs) and is never accepted from clients.
+ * (exports, PDFs), is never accepted from clients, and only its own
+ * `maxBytes` applies to it.
  */
 export const FILE_PURPOSES = {
   student_photo: { folder: 'photos', mimes: IMAGES, maxBytes: 2 * MB },

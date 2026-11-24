@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -29,4 +30,20 @@ export class FilterGuardianDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID('4')
   userId?: string;
+
+  /** Part of the name, or of the phone number (3+ digits). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  q?: string;
+
+  /** Only guardians with (`yes`) or without (`no`) a portal sign-in. */
+  @IsOptional()
+  @IsIn(['yes', 'no'])
+  portal?: 'yes' | 'no';
+
+  /** Adds `children` (linked students) to each row. */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  withChildren?: 'true' | 'false';
 }

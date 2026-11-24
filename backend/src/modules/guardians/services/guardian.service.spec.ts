@@ -221,4 +221,29 @@ describe('GuardianService', () => {
     expect(guardianRepo.findInSections).toHaveBeenCalledWith({}, ['sec-1']);
     expect(guardianRepo.findFiltered).not.toHaveBeenCalled();
   });
+
+  it('searches with the scope and adds each guardian’s children', async () => {
+    const a = makeGuardian({ id: 'g-a' });
+    const b = makeGuardian({ id: 'g-b' });
+    guardianRepo.search = jest.fn().mockResolvedValue({ items: [a, b] });
+    guardianRepo.childrenOf = jest.fn().mockResolvedValue([
+      { guardianId: 'g-a', studentId: 's-1', name: 'Asha' },
+      { guardianId: 'g-a', studentId: 's-2', name: 'Ravi' },
+    ]);
+
+    await service.findFiltered({ q: 'yad', withChildren: 'true' }, ['sec-1']);
+
+    expect(guardianRepo.search).toHaveBeenCalledWith(
+      { q: 'yad', withChildren: 'true' },
+      ['sec-1'],
+    );
+    expect(guardianRepo.childrenOf).toHaveBeenCalledWith(['g-a', 'g-b']);
+    expect(a).toMatchObject({
+      children: [
+        { studentId: 's-1', name: 'Asha' },
+        { studentId: 's-2', name: 'Ravi' },
+      ],
+    });
+    expect(b).toMatchObject({ children: [] });
+  });
 });

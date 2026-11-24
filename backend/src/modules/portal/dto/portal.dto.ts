@@ -44,3 +44,10 @@ export class PortalReceiptPdfDto {
   @IsIn(['80mm', 'A4'])
   paper?: '80mm' | 'A4';
 }
+
+export class PortalCalendarQueryDto {
+  /** `YYYY-MM`. */
+  @IsDefined()
+  @Matches(/^\d{4}-(0[1-9]|1[0-2])$/, { message: 'month must be YYYY-MM' })
+  month: string;
+}

@@ -203,6 +203,8 @@ export class NotificationService {
               t.key === key && t.channel === channel && t.locale === locale,
           );
           return {
+            /** Set on the school's own wording (for resetting it). */
+            id: custom?.id ?? null,
             key,
             channel,
             locale,
@@ -233,7 +235,23 @@ export class NotificationService {
     this.templateCache = undefined;
   }
 
-  log(filter: FilterDeliveryLogDto): Promise<Paginated<DeliveryLog>> {
+  /** The log, with each recipient's name (`recipientName`). */
+  async log(filter: FilterDeliveryLogDto): Promise<Paginated<DeliveryLog>> {
+    const page = await this.logPage(filter);
+    const names = await this.logRepo.recipientNames([
+      ...new Set(page.items.map((l) => l.userId).filter((id) => id !== null)),
+    ]);
+    for (const row of page.items) {
+      Object.assign(row, {
+        recipientName: (row.userId && names.get(row.userId)) || null,
+      });
+    }
+    return page;
+  }
+
+  private logPage(
+    filter: FilterDeliveryLogDto,
+  ): Promise<Paginated<DeliveryLog>> {
     const where: FindOptionsWhere<DeliveryLog> = {};
     if (filter.channel) where.channel = filter.channel;
     if (filter.status) where.status = filter.status;

@@ -29,6 +29,7 @@ import {
 import { FilterMarkSheetDto } from '../dto/mark-sheet.dto';
 import { ExamService } from '../services/exam.service';
 import { MarkSheetService } from '../services/mark-sheet.service';
+import { TeachingService } from '~/modules/teaching/services/teaching.service';
 
 /** Exam setup (PRD 6.9, workflow 7.4 step 1). */
 @ApiTags('Tenant / Exams')
@@ -45,6 +46,7 @@ export class ExamController {
     private readonly exams: ExamService,
     private readonly sheets: MarkSheetService,
     private readonly scope: AccessScope,
+    private readonly teaching: TeachingService,
   ) {}
 
   @Get()
@@ -144,11 +146,19 @@ export class ExamController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query() filter: FilterMarkSheetDto,
   ) {
-    await this.exams.findById(id);
-    return this.sheets.listForExam(
+    const exam = await this.exams.findById(id);
+    const sheets = await this.sheets.listForExam(
       id,
       filter,
       await this.scope.sections(PERMISSIONS.RESULTS_READ),
     );
+    // Who enters each sheet's marks: the subject teacher now.
+    const teachers = await this.teaching.currentSubjectTeacherNames(
+      exam.academicYearId,
+    );
+    return sheets.map((s) => ({
+      ...s,
+      teacherName: teachers.get(`${s.sectionId}:${s.classSubjectId}`) ?? null,
+    }));
   }
 }

@@ -29,6 +29,7 @@ export interface ResultRow {
   positionSection: number | null;
   positionClass: number | null;
   remarks: string | null;
+  coScholastic: Record<string, string> | null;
   publishedAt: Date | null;
   subjects: {
     classSubjectId: string;
@@ -214,6 +215,28 @@ export class ResultService {
     return this.row(id, null);
   }
 
+  /** The class teacher's co-scholastic grades for a board report card. */
+  async setCoScholastic(
+    id: string,
+    grades: Record<string, string>,
+    allowed: string[] | null,
+  ) {
+    const result = await this.findById(id, allowed);
+    const clean = Object.fromEntries(
+      Object.entries(grades).filter(([, g]) => g),
+    );
+    const value = Object.keys(clean).length ? clean : null;
+    await this.resultRepo.updateFields(id, { coScholastic: value });
+    await this.audit.record({
+      action: AUDIT_ACTIONS.RESULT_REMARKS_UPDATED,
+      entityType: 'result',
+      entityId: id,
+      before: { coScholastic: result.coScholastic ?? null },
+      after: { coScholastic: value },
+    });
+    return this.row(id, null);
+  }
+
   async reportCardUrl(id: string, allowed: string[] | null) {
     const result = await this.findById(id, allowed);
     if (!result.reportCardFileId) {
@@ -307,6 +330,7 @@ export function toRow(r: Result): ResultRow {
     positionSection: r.positionSection,
     positionClass: r.positionClass,
     remarks: r.remarks,
+    coScholastic: r.coScholastic ?? null,
     publishedAt: r.publishedAt,
     subjects: (r.subjects ?? [])
       .map((s) => ({

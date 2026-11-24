@@ -71,7 +71,7 @@ export const TRIAL_DAYS = 30;
 export interface PlanSeed {
   code: PlanCode;
   name: string;
-  /** Per active student per month, in minor units (poisha). */
+  /** Per active student per month, in minor units (paise). */
   pricePerStudent: number;
   /** Minimum monthly fee, in minor units. */
   minFee: number;

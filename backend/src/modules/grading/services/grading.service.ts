@@ -45,6 +45,20 @@ const BASE_RULES: GradingRules = {
   failGrade: 'F',
 };
 
+/** The report card layout a class's grading system prints with. */
+export type ReportCardFormat = 'cbse' | 'icse' | 'state' | 'standard';
+
+export const reportCardFormat = (
+  templateCode: string | null | undefined,
+): ReportCardFormat =>
+  templateCode === 'cbse'
+    ? 'cbse'
+    : templateCode === 'icse'
+      ? 'icse'
+      : templateCode === 'up-board' || templateCode === 'percentage-division'
+        ? 'state'
+        : 'standard';
+
 /** A system with its scale, ready for the engine. */
 export interface ResolvedGrading {
   system: GradingSystem;

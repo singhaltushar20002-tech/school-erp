@@ -1,18 +1,23 @@
 import {
   BanknoteIcon,
+  BookOpenCheckIcon,
   BookOpenIcon,
   BriefcaseBusinessIcon,
+  BusIcon,
   CalendarCheckIcon,
+  CalendarDaysIcon,
   ClipboardListIcon,
   HeartHandshakeIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
+  LibraryIcon,
   MegaphoneIcon,
   MessagesSquareIcon,
   ReceiptIcon,
   SettingsIcon,
   ShieldCheckIcon,
   UsersIcon,
+  WalletCardsIcon,
   type LucideIcon,
 } from "lucide-react"
 
@@ -101,6 +106,11 @@ export const NAV: NavCategory[] = [
             href: "/dashboard/academics/shifts-rooms",
             permission: ["shifts:read", "rooms:read"],
           },
+          {
+            id: "timetable",
+            href: "/dashboard/academics/timetable",
+            permission: "timetables:read",
+          },
         ],
       },
       {
@@ -128,6 +138,30 @@ export const NAV: NavCategory[] = [
             permission: "holidays:read",
           },
         ],
+      },
+      {
+        id: "calendar",
+        icon: CalendarDaysIcon,
+        href: "/dashboard/calendar",
+        permission: "holidays:read",
+      },
+      {
+        id: "homework",
+        icon: BookOpenCheckIcon,
+        href: "/dashboard/homework",
+        permission: "homework:read",
+      },
+      {
+        id: "transport",
+        icon: BusIcon,
+        href: "/dashboard/transport",
+        permission: "transport:read",
+      },
+      {
+        id: "library",
+        icon: LibraryIcon,
+        href: "/dashboard/library",
+        permission: "library:read",
       },
       {
         id: "exams",
@@ -173,6 +207,11 @@ export const NAV: NavCategory[] = [
             id: "studentDirectory",
             href: "/dashboard/students",
             permission: "students:read",
+          },
+          {
+            id: "enquiries",
+            href: "/dashboard/admissions/enquiries",
+            permission: "enquiries:read",
           },
           {
             id: "admitStudent",
@@ -226,6 +265,21 @@ export const NAV: NavCategory[] = [
             href: "/dashboard/staff/designations",
             permission: "designations:read",
           },
+          {
+            id: "staffAttendance",
+            href: "/dashboard/staff/attendance",
+            permission: "staff_attendance:manage",
+          },
+          {
+            id: "staffLeave",
+            href: "/dashboard/staff/leave",
+            permission: ["staff_leaves:approve", "staff_attendance:manage"],
+          },
+          {
+            id: "substitutes",
+            href: "/dashboard/staff/substitutes",
+            permission: "substitutions:manage",
+          },
         ],
       },
     ],
@@ -263,11 +317,22 @@ export const NAV: NavCategory[] = [
             permission: "fees:setup",
           },
           {
+            id: "openingBalances",
+            href: "/dashboard/fees/opening-balances",
+            permission: "fees:bill",
+          },
+          {
             id: "approvals",
             href: "/dashboard/fees/approvals",
             permission: "fees:approve_waiver",
           },
         ],
+      },
+      {
+        id: "payroll",
+        icon: WalletCardsIcon,
+        href: "/dashboard/payroll",
+        permission: "payroll:read",
       },
       {
         id: "expenses",

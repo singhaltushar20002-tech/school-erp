@@ -178,3 +178,135 @@ export const feeStatementQuery = (id: string) =>
 /** "Class 5 A", or null for a student with no class this session. */
 export const placementLabel = (p: StudentPlacement | null | undefined) =>
   p ? `${p.className} ${p.sectionName}` : null
+
+// --- Admission and edits --------------------------------------------------
+
+export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]
+
+export interface StudentInput {
+  firstName: string
+  lastName: string
+  gender?: "male" | "female" | "other"
+  dob?: string
+  religion?: string
+  bloodGroup?: string
+  admissionDate?: string
+  admissionType?: "new" | "transfer" | "readmission"
+  previousSchool?: string
+  phone?: string
+  email?: string
+}
+
+export const createStudent = (body: StudentInput & { classId: string }) =>
+  apiFetch<Student>("/students", { method: "POST", body })
+
+export const updateStudent = (id: string, body: Partial<StudentInput>) =>
+  apiFetch<Student>(`/students/${id}`, { method: "PATCH", body })
+
+export const enrollStudent = (body: {
+  studentId: string
+  academicYearId: string
+  classId: string
+  sectionId: string
+  rollNo?: string
+}) => apiFetch<{ id: string }>("/enrollments", { method: "POST", body })
+
+interface GuardianRecord {
+  id: string
+  name: string
+  phone: string | null
+}
+
+/** A guardian already in the school with this phone (a sibling's parent). */
+export const findGuardianByPhone = async (phone: string) =>
+  (
+    await apiFetchPage<GuardianRecord>("/guardians", {
+      query: { phone, limit: 1 },
+    })
+  ).items[0] ?? null
+
+export type GuardianRelation =
+  "father" | "mother" | "local_guardian" | "brother" | "sister" | "other"
+
+export const attachGuardian = (
+  studentId: string,
+  body: {
+    guardianId?: string
+    createGuardian?: { name: string; phone?: string; occupation?: string }
+    relation: GuardianRelation
+    isPrimary?: boolean
+  }
+) =>
+  apiFetch<unknown>(`/students/${studentId}/guardians`, {
+    method: "POST",
+    body,
+  })
+
+export const uploadStudentPhoto = (id: string, file: File) => {
+  const form = new FormData()
+  form.append("file", file)
+  return apiFetch<Student>(`/students/${id}/photo`, {
+    method: "POST",
+    body: form,
+  })
+}
+
+export type DocumentType =
+  | "birth_certificate"
+  | "transfer_certificate"
+  | "national_id"
+  | "medical_certificate"
+  | "passport"
+  | "photo"
+  | "other"
+
+export const DOCUMENT_TYPES: DocumentType[] = [
+  "birth_certificate",
+  "transfer_certificate",
+  "national_id",
+  "medical_certificate",
+  "passport",
+  "photo",
+  "other",
+]
+
+export interface StudentDocument {
+  id: string
+  documentType: DocumentType
+  title: string | null
+  verificationStatus: "pending" | "verified" | "rejected"
+  createdAt: string
+}
+
+export const studentDocumentsQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["students", id, "documents"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<StudentDocument[]>(`/students/${id}/documents`, { signal }),
+  })
+
+export const uploadStudentDocument = (
+  id: string,
+  file: File,
+  documentType: DocumentType,
+  title?: string
+) => {
+  const form = new FormData()
+  form.append("file", file)
+  form.append("documentType", documentType)
+  if (title) form.append("title", title)
+  return apiFetch<StudentDocument>(`/students/${id}/documents`, {
+    method: "POST",
+    body: form,
+  })
+}
+
+export const documentDownloadUrl = (studentId: string, documentId: string) =>
+  apiFetch<{ url: string }>(
+    `/students/${studentId}/documents/${documentId}/download`
+  )
+
+export const changeStudentStatus = (
+  id: string,
+  body: { status: StudentStatus; reason?: string; effectiveDate?: string }
+) => apiFetch<Student>(`/students/${id}/status`, { method: "POST", body })

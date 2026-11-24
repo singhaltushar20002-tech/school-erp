@@ -33,6 +33,9 @@ import { DEFAULT_PAGE_SIZE } from '~/common/dto/pagination-query.dto';
 import { Membership } from '~/modules/memberships/entities/membership.entity';
 import { MembershipRole } from '~/modules/memberships/enums/membership-role.enum';
 import { User } from '~/modules/users/entities/user.entity';
+import { UserStatus } from '~/modules/users/enums/user-status.enum';
+import { normalizeEmail } from '~/common/identity/identifier';
+import { unusablePasswordHash } from '~/common/identity/password';
 import { UserService } from '~/modules/users/services/user.service';
 import {
   tenantDomainCache,
@@ -164,8 +167,14 @@ export class OrganizationService {
       owner = await this.userService.findById(ctx, user?.id ?? '');
     }
 
+    const ownerEmail =
+      !owner && can(ctx, PLATFORM_PERMISSIONS.ORGANIZATIONS_MANAGE)
+        ? dto.ownerEmail && normalizeEmail(dto.ownerEmail)
+        : undefined;
     const {
       ownerUserId: _ownerUserId,
+      ownerEmail: _ownerEmail,
+      ownerName,
       planCode = PlanCode.FREE,
       trialDays,
       ...fields
@@ -185,6 +194,22 @@ export class OrganizationService {
             : {}),
         });
 
+        if (ownerEmail) {
+          // The owner by email: their account, or a new one that has no
+          // password until the activation link sets it.
+          const users = manager.getRepository(User);
+          owner =
+            (await users.findOne({ where: { email: ownerEmail } })) ??
+            (await users.save(
+              users.create({
+                email: ownerEmail,
+                name: ownerName?.trim() || ownerEmail.split('@')[0],
+                password: await unusablePasswordHash(),
+                passwordSet: false,
+                status: UserStatus.PENDING,
+              }),
+            ));
+        }
         let token: string | undefined;
         if (owner) {
           ({ token } = await this.ownerProvisioning.provisionOwner(manager, {

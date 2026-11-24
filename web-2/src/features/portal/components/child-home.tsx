@@ -43,6 +43,7 @@ import { StatGrid, StatTile } from "~/features/dashboard/components/stat-tile"
 import { useSchoolFormat } from "~/features/settings/use-school-format"
 
 import { useSelectedChild } from "../use-selected-child"
+import { BusAndBooks, TodayCard } from "./child-extras"
 
 const STATUS_ICONS: Record<CountsAs, React.ReactNode> = {
   present: <CircleCheckIcon />,
@@ -157,6 +158,9 @@ function Summary({ data }: { data: ChildDashboard }) {
           }
         />
       </StatGrid>
+
+      <TodayCard studentId={child.studentId} />
+      <BusAndBooks studentId={child.studentId} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="min-w-0">

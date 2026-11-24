@@ -8,6 +8,10 @@ import { writeSheet } from '~/shared/spreadsheet/spreadsheet';
 import { AttendanceReportService } from '~/modules/attendance/services/attendance-report.service';
 import { FileService } from '~/modules/files/file.service';
 import { JobTracker } from '~/modules/jobs/services/job-tracker.service';
+import {
+  GradingService,
+  reportCardFormat,
+} from '~/modules/grading/services/grading.service';
 import { SettingsService } from '~/modules/settings/services/settings.service';
 import {
   REPORT_CARDS_JOB,
@@ -48,6 +52,32 @@ const LABELS = {
     absent: 'Absent',
     exempt: 'Exempt',
   },
+  hi: {
+    title: 'प्रगति पत्र',
+    session: 'सत्र',
+    name: 'नाम',
+    id: 'छात्र आईडी',
+    class: 'कक्षा',
+    section: 'अनुभाग',
+    roll: 'रोल',
+    subject: 'विषय',
+    full: 'पूर्णांक',
+    obtained: 'प्राप्तांक',
+    grade: 'ग्रेड',
+    point: 'अंक',
+    fourth: 'चौथा विषय',
+    total: 'योग',
+    gpa: 'जीपीए',
+    result: 'परिणाम',
+    passed: 'उत्तीर्ण',
+    failed: 'अनुत्तीर्ण',
+    sectionPosition: 'अनुभाग में स्थान',
+    classPosition: 'कक्षा में स्थान',
+    attendance: 'उपस्थिति',
+    remarks: 'टिप्पणी',
+    absent: 'अनुपस्थित',
+    exempt: 'छूट',
+  },
   bn: {
     title: 'অগ্রগতি প্রতিবেদন',
     session: 'শিক্ষাবর্ষ',
@@ -75,6 +105,108 @@ const LABELS = {
     exempt: 'অব্যাহতি',
   },
 } as const;
+
+/** Extra words on the board (CBSE, ICSE, state) report cards. */
+const BOARD_LABELS = {
+  en: {
+    title: 'Report Card',
+    code: 'School code',
+    admission: 'Admission no.',
+    part1: 'Part 1: Scholastic areas',
+    part2: 'Part 2: Co-scholastic areas',
+    part3: 'Part 3: Discipline',
+    marks: 'Marks',
+    max: 'Max. marks',
+    percentage: 'Percentage',
+    division: 'Division',
+    overall: 'Overall grade',
+    area: 'Area',
+    discipline: 'Discipline',
+    threePoint: 'A: Outstanding · B: Very good · C: Fair',
+    remarks: "Class teacher's remarks",
+    scale: 'Grading scale',
+    areas: {
+      work_education: 'Work education',
+      art_education: 'Art education',
+      health_physical: 'Health & physical education',
+    },
+    signatures: {} as Record<string, string>,
+  },
+  hi: {
+    title: 'रिपोर्ट कार्ड',
+    code: 'विद्यालय कोड',
+    admission: 'प्रवेश संख्या',
+    part1: 'भाग 1: शैक्षिक क्षेत्र',
+    part2: 'भाग 2: सह-शैक्षिक क्षेत्र',
+    part3: 'भाग 3: अनुशासन',
+    marks: 'अंक',
+    max: 'पूर्णांक',
+    percentage: 'प्रतिशत',
+    division: 'श्रेणी',
+    overall: 'समग्र ग्रेड',
+    area: 'क्षेत्र',
+    discipline: 'अनुशासन',
+    threePoint: 'A: उत्कृष्ट · B: बहुत अच्छा · C: संतोषजनक',
+    remarks: 'कक्षा शिक्षक की टिप्पणी',
+    scale: 'ग्रेड मापदंड',
+    areas: {
+      work_education: 'कार्य शिक्षा',
+      art_education: 'कला शिक्षा',
+      health_physical: 'स्वास्थ्य एवं शारीरिक शिक्षा',
+    },
+    signatures: {
+      'Class teacher': 'कक्षा शिक्षक',
+      Guardian: 'अभिभावक',
+      Parent: 'अभिभावक',
+      'Head teacher': 'प्रधानाचार्य',
+      Principal: 'प्रधानाचार्य',
+    } as Record<string, string>,
+  },
+};
+
+const DIVISIONS_HI: Record<string, string> = {
+  'First Division': 'प्रथम श्रेणी',
+  'Second Division': 'द्वितीय श्रेणी',
+  'Third Division': 'तृतीय श्रेणी',
+  Fail: 'अनुत्तीर्ण',
+};
+
+const BOARD_CSS = `
+body{font-size:10pt}
+.card{page-break-after:always;padding:3mm}
+.card:last-child{page-break-after:auto}
+.head{display:flex;align-items:center;gap:4mm;justify-content:center;border-bottom:2px solid #333;padding-bottom:2mm}
+.logo{height:20mm}
+.head-text{text-align:center}
+.school{font-size:17pt;font-weight:bold}
+.tagline{font-style:italic;color:#444}
+.small{font-size:8.5pt;color:#333}
+.title{text-align:center;font-size:13pt;font-weight:bold;margin-top:3mm;letter-spacing:1px}
+.sub{text-align:center;color:#444;margin-bottom:2mm}
+.info td{padding:1mm 0}
+.part{margin-top:3mm;font-weight:bold;background:#eee;padding:1mm 2mm}
+.marks{margin-top:1mm}
+.marks th,.marks td{border:1px solid #666;padding:1.3mm;text-align:center}
+.marks th{background:#f4f4f4}
+.marks .subj{text-align:left}
+.marks .parts{font-size:8pt;color:#555}
+.marks tr.fail td{color:#b00}
+.marks tr.total td{font-weight:bold}
+.summary{margin-top:2mm}
+.summary td{padding:1.5mm;border:1px solid #ccc}
+.two{display:flex;gap:4mm}
+.two>div{flex:1}
+.note{font-size:8pt;color:#555;margin-top:1mm}
+.remarks{margin-top:3mm;border:1px solid #ccc;padding:2mm;min-height:10mm}
+.scale{margin-top:3mm;font-size:8pt}
+.scale td{border:1px solid #ccc;padding:1mm;text-align:center}
+.scale .scale-head{font-weight:bold;text-align:left}
+.signs{margin-top:6mm}
+.signs td{text-align:center;vertical-align:bottom;height:16mm}
+.sig{display:block;max-height:12mm;max-width:40mm;margin:0 auto}
+.line{border-top:1px solid #000;width:45mm;margin:0 auto 1mm}
+.footer{margin-top:2mm;text-align:center;font-size:8pt;color:#555}
+`;
 
 const CARD_CSS = `
 body{font-size:10pt}
@@ -150,6 +282,12 @@ export class ResultJobs {
       const files = await resolve(FileService);
       const { resultDefinitionId, sectionId, language } = payload.data;
       const definition = await definitions.findById(resultDefinitionId);
+      const grading = await resolve(GradingService);
+      const { system, scheme } = await grading.schemeFor(
+        definition.academicYearId,
+        definition.classId,
+      );
+      const format = reportCardFormat(system.templateCode);
       const options = (await settings.getSection('results')).reportCard;
       const school = await settings.getDisplay();
       const rows = (
@@ -190,12 +328,73 @@ export class ResultJobs {
           return { label, image: signer ? images.get(signer) : undefined };
         }),
       };
+      const board = format !== 'standard';
+      const b = BOARD_LABELS[language === 'hi' ? 'hi' : 'en'];
+      const boardPage = board
+        ? {
+            ...page,
+            b,
+            lh: await settings.letterhead(),
+            isCbse: format === 'cbse',
+            isState: format === 'state',
+            showGrade: format !== 'state',
+            scale:
+              format === 'state'
+                ? []
+                : scheme.bands
+                    .slice()
+                    .sort((x, y) => y.minPercent - x.minPercent)
+                    .map((band) => ({
+                      letter: band.letter,
+                      range: `${band.minPercent}–${band.maxPercent}`,
+                    })),
+            signatures: page.signatures.map((s) => ({
+              ...s,
+              label: b.signatures[s.label] ?? s.label,
+            })),
+          }
+        : null;
+      const boardCards = board
+        ? rows.map((r, i) => {
+            const base = cards[i];
+            const grades = r.coScholastic ?? {};
+            const grade =
+              language === 'hi' && format === 'state'
+                ? (DIVISIONS_HI[r.grade] ?? r.grade)
+                : r.grade;
+            return {
+              ...base,
+              grade,
+              percentage: formatNumber(
+                (Math.round(r.percentage * 10) / 10).toFixed(1),
+                school.locale.numerals,
+              ),
+              remarks: r.remarks ?? '',
+              coScholastic: (
+                Object.keys(b.areas) as (keyof typeof b.areas)[]
+              ).map((area) => ({
+                label: b.areas[area],
+                grade: grades[area] ?? '',
+              })),
+              discipline: grades.discipline ?? '',
+            };
+          })
+        : null;
       const render = (list: typeof cards) =>
-        this.pdf.render(
-          'report-cards/cards',
-          { ...page, cards: list },
-          { paper: 'A4', css: CARD_CSS },
-        );
+        boardPage
+          ? this.pdf.render(
+              'report-cards/board',
+              {
+                ...boardPage,
+                cards: list.map((c) => boardCards![cards.indexOf(c)]),
+              },
+              { paper: 'A4', css: BOARD_CSS },
+            )
+          : this.pdf.render(
+              'report-cards/cards',
+              { ...page, cards: list },
+              { paper: 'A4', css: CARD_CSS },
+            );
 
       // Each card renders once; the section's PDF joins those pages.
       let done = 0;

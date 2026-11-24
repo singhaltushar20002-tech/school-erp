@@ -4,6 +4,8 @@ export enum ImportType {
   STAFF = 'staff',
   /** One mark sheet's marks (M5). */
   MARKS = 'marks',
+  /** Dues carried over from the old system, one invoice per student. */
+  OPENING_BALANCES = 'opening_balances',
 }
 
 export enum ImportStatus {

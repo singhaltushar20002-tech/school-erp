@@ -21,6 +21,8 @@ import { User } from '../entities/user.entity';
 import { PlatformRole } from '../enums/platform-role.enum';
 import { UserStatus } from '../enums/user-status.enum';
 import { SessionService } from '~/modules/auth/services/session.service';
+import { PlatformAuditService } from '~/modules/audit/services/platform-audit.service';
+import { AUDIT_ACTIONS } from '~/modules/audit/audit-actions';
 
 @Injectable()
 export class UserService {
@@ -30,6 +32,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly sessions: SessionService,
+    private readonly platformAudit: PlatformAuditService,
   ) {}
 
   async findAll(
@@ -82,6 +85,17 @@ export class UserService {
       platformRole: dto.platformRole ?? PlatformRole.USER,
     });
     await this.userRepo.save(user);
+    await this.platformAudit.record({
+      action: AUDIT_ACTIONS.PLATFORM_USER_CREATED,
+      entityType: 'user',
+      entityId: user.id,
+      after: {
+        email: user.email,
+        name: user.name,
+        platformRole: user.platformRole,
+        status: user.status,
+      },
+    });
     return this.findById(ctx, user.id);
   }
 
@@ -137,6 +151,15 @@ export class UserService {
     if (blocked || saved.platformRole !== before.platformRole) {
       await this.sessions.revokeAllForUser(saved.id);
     }
+    if (changesAccess) {
+      await this.platformAudit.record({
+        action: AUDIT_ACTIONS.PLATFORM_USER_UPDATED,
+        entityType: 'user',
+        entityId: saved.id,
+        before,
+        after: { status: saved.status, platformRole: saved.platformRole },
+      });
+    }
     return saved;
   }
 
@@ -155,6 +178,16 @@ export class UserService {
     }
     await this.sessions.revokeAllForUser(targetId);
     await this.userRepo.delete(targetId);
+    await this.platformAudit.record({
+      action: AUDIT_ACTIONS.PLATFORM_USER_REMOVED,
+      entityType: 'user',
+      entityId: targetId,
+      before: {
+        email: user.email,
+        name: user.name,
+        platformRole: user.platformRole,
+      },
+    });
   }
 
   /** The platform always keeps one active super admin to manage staff. */

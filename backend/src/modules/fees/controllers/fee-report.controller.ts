@@ -5,6 +5,8 @@ import {
   Post,
   Query,
   UseGuards,
+  Body,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage } from '~/common/decorators/response.decorators';
@@ -21,6 +23,7 @@ import {
   DefaultersQueryDto,
   DuesQueryDto,
   PeriodRangeDto,
+  RemindDuesDto,
 } from '../dto/report.dto';
 import { FeeIntegrityService } from '../services/fee-integrity.service';
 import { FeeReportService } from '../services/fee-report.service';
@@ -42,6 +45,15 @@ export class FeeReportController {
     private readonly integrity: FeeIntegrityService,
     private readonly scope: AccessScope,
   ) {}
+
+  /** Reminds the families of the chosen students about overdue fees now. */
+  @Post('reminders')
+  @HttpCode(HttpStatus.OK)
+  @RequirePermissions(PERMISSIONS.FEES_COLLECT)
+  @ResponseMessage('Reminders queued')
+  async remind(@Body() dto: RemindDuesDto) {
+    return this.reports.remindStudents(dto.studentIds, await this.allowed());
+  }
 
   /** Who owes what, with aging buckets (0–30, 31–60, 61–90, 90+ days). */
   @Get('dues')

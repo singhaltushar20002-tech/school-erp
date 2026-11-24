@@ -27,6 +27,14 @@ export class ClassTimetableRepository extends BaseTenantRepository<ClassTimetabl
     return this.repo.findOne({ where: { id }, relations: RELATIONS });
   }
 
+  /** Changes columns only (the loaded relations would override the ids). */
+  async updateFields(
+    id: string,
+    patch: Partial<Pick<ClassTimetable, 'subjectId' | 'employeeId'>>,
+  ): Promise<void> {
+    if (Object.keys(patch).length) await this.repo.update({ id }, patch);
+  }
+
   findSlot(
     academicYearId: string,
     classId: string,

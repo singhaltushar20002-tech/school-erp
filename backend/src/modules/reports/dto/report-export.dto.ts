@@ -3,6 +3,7 @@ import { IsDefined, IsIn, IsObject, IsOptional } from 'class-validator';
 export const REPORT_KEYS = [
   'fees.dues',
   'fees.defaulters',
+  'fees.receipts',
   'attendance.defaulters',
   'attendance.late-comers',
 ] as const;

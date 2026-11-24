@@ -83,6 +83,29 @@ describe('FileService', () => {
     ).rejects.toBeInstanceOf(PayloadTooLargeException);
   });
 
+  it('lets server-made files past the client upload cap', async () => {
+    // A school's full export zips to more than UPLOAD_MAX_BYTES (5 MB here).
+    const zip = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+      Buffer.alloc(6 * 1024 * 1024),
+    ]);
+    const file = await service.storeGenerated({
+      buffer: zip,
+      originalName: 'school-export.zip',
+    });
+
+    expect(file).toMatchObject({ mime: MIME.zip, purpose: 'generated' });
+    await expect(
+      service.upload(
+        {
+          buffer: Buffer.concat([PDF, Buffer.alloc(6 * 1024 * 1024)]),
+          originalName: 'big.pdf',
+        },
+        'attachment',
+      ),
+    ).rejects.toBeInstanceOf(PayloadTooLargeException);
+  });
+
   it('rejects empty files', async () => {
     await expect(
       service.upload(

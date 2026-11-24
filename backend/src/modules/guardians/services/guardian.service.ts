@@ -75,6 +75,9 @@ export class GuardianService {
     filter: FilterGuardianDto,
     allowedSectionIds: string[] | null = null,
   ): Promise<Paginated<Guardian>> {
+    if (filter.q || filter.portal || filter.withChildren === 'true') {
+      return this.search(filter, allowedSectionIds);
+    }
     if (allowedSectionIds !== null) {
       return this.guardianRepo.findInSections(filter, allowedSectionIds);
     }
@@ -86,6 +89,26 @@ export class GuardianService {
     if (filter.email) where.email = filter.email;
     if (filter.userId) where.userId = filter.userId;
     return this.guardianRepo.findFiltered(where, filter);
+  }
+
+  /** The guardians screen: search, plus each guardian's children. */
+  private async search(
+    filter: FilterGuardianDto,
+    allowedSectionIds: string[] | null,
+  ): Promise<Paginated<Guardian>> {
+    const page = await this.guardianRepo.search(filter, allowedSectionIds);
+    if (filter.withChildren !== 'true') return page;
+    const children = await this.guardianRepo.childrenOf(
+      page.items.map((g) => g.id),
+    );
+    for (const g of page.items) {
+      Object.assign(g, {
+        children: children
+          .filter((c) => c.guardianId === g.id)
+          .map(({ guardianId: _, ...child }) => child),
+      });
+    }
+    return page;
   }
 
   async findById(id: string): Promise<Guardian> {

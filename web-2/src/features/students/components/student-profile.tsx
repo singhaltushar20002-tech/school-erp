@@ -11,7 +11,6 @@ import {
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 
-import { InitialsAvatar } from "~/components/common/initials-avatar"
 import { Badge } from "~/components/ui/badge"
 import { buttonVariants } from "~/components/ui/button"
 import {
@@ -38,6 +37,11 @@ import {
   type Invoice,
   type StudentOverview,
 } from "../api"
+import {
+  StudentActions,
+  StudentDocuments,
+  StudentPhoto,
+} from "./student-record-extras"
 import { StudentStatusBadge } from "./student-status-badge"
 
 /**
@@ -78,7 +82,7 @@ function Profile({ data }: { data: StudentOverview }) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:p-6">
-        <InitialsAvatar name={profile.fullName} className="size-16 text-lg" />
+        <StudentPhoto student={profile} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="font-display text-2xl font-semibold">
@@ -100,15 +104,18 @@ function Profile({ data }: { data: StudentOverview }) {
             {t("studentId", { id: profile.admissionNumber })}
           </p>
         </div>
-        <Can permission="fees:collect">
-          <Link
-            href={`/dashboard/fees/collect?student=${profile.id}`}
-            className={buttonVariants()}
-          >
-            <BanknoteIcon data-icon="inline-start" />
-            {t("collectFee")}
-          </Link>
-        </Can>
+        <div className="flex flex-wrap gap-2">
+          <StudentActions student={profile} />
+          <Can permission="fees:collect">
+            <Link
+              href={`/dashboard/fees/collect?student=${profile.id}`}
+              className={buttonVariants()}
+            >
+              <BanknoteIcon data-icon="inline-start" />
+              {t("collectFee")}
+            </Link>
+          </Can>
+        </div>
       </header>
 
       <StatGrid>
@@ -281,6 +288,7 @@ function Profile({ data }: { data: StudentOverview }) {
       </div>
 
       {statement.data && <Fees statement={statement.data} />}
+      <StudentDocuments studentId={profile.id} />
     </div>
   )
 }
@@ -353,7 +361,15 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
   )
 }
 
-const RELATIONS = ["father", "mother", "guardian", "other"] as const
+const RELATIONS = [
+  "father",
+  "mother",
+  "guardian",
+  "local_guardian",
+  "brother",
+  "sister",
+  "other",
+] as const
 const isRelation = (r: string): r is (typeof RELATIONS)[number] =>
   (RELATIONS as readonly string[]).includes(r)
 

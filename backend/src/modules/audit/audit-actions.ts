@@ -20,6 +20,11 @@ export const AUDIT_ACTIONS = {
   IDENTITY_LINKED: 'auth.identity_linked',
   IDENTITY_UNLINKED: 'auth.identity_unlinked',
 
+  // Platform staff (console accounts)
+  PLATFORM_USER_CREATED: 'platform_user.created',
+  PLATFORM_USER_UPDATED: 'platform_user.updated',
+  PLATFORM_USER_REMOVED: 'platform_user.removed',
+
   // Roles and permissions
   ROLE_CREATED: 'role.created',
   ROLE_UPDATED: 'role.updated',

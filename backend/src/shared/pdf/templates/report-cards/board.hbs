@@ -1,0 +1,95 @@
+{{#each cards}}
+  <div class='card'>
+    <div class='head'>
+      {{#if ../lh.logo}}<img class='logo' src='{{../lh.logo}}' />{{/if}}
+      <div class='head-text'>
+        <div class='school'>{{../lh.name}}</div>
+        {{#if ../lh.tagline}}<div class='tagline'>{{../lh.tagline}}</div>{{/if}}
+        {{#if ../lh.address}}<div class='small'>{{../lh.address}}</div>{{/if}}
+        {{#if ../lh.contact}}<div class='small'>{{../lh.contact}}</div>{{/if}}
+        {{#if ../lh.code}}<div class='small'>{{../b.code}}: {{../lh.code}}</div>{{/if}}
+      </div>
+    </div>
+    <div class='title'>{{../b.title}}</div>
+    <div class='sub'>{{../resultName}} · {{../l.session}} {{../session}}</div>
+    <table class='info'><tr>
+        <td>{{../l.name}}: <b>{{this.name}}</b></td>
+        <td>{{../b.admission}}: <b>{{this.admissionNumber}}</b></td>
+      </tr><tr>
+        <td>{{../l.class}}: <b>{{../className}} – {{this.sectionName}}</b></td>
+        <td>{{../l.roll}}: <b>{{this.rollNo}}</b></td>
+      </tr></table>
+
+    <div class='part'>{{#if ../isCbse}}{{../b.part1}}{{else}}{{../b.marks}}{{/if}}</div>
+    <table class='marks'>
+      <thead><tr>
+          <th class='subj'>{{../l.subject}}</th>
+          <th>{{../b.max}}</th>
+          <th>{{../l.obtained}}</th>
+          {{#if ../showGrade}}<th>{{../l.grade}}</th>{{/if}}
+        </tr></thead>
+      <tbody>
+        {{#each this.subjects}}
+          <tr class='{{#unless this.passed}}fail{{/unless}}'>
+            <td class='subj'>{{this.name}}{{#if this.parts}}<div class='parts'>{{this.parts}}</div>{{/if}}</td>
+            <td>{{this.fullMarks}}</td>
+            <td>{{this.obtained}}</td>
+            {{#if ../../showGrade}}<td>{{this.grade}}</td>{{/if}}
+          </tr>
+        {{/each}}
+        <tr class='total'>
+          <td class='subj'>{{../l.total}}</td>
+          <td>{{this.fullMarks}}</td>
+          <td>{{this.total}}</td>
+          {{#if ../showGrade}}<td>{{this.grade}}</td>{{/if}}
+        </tr>
+      </tbody>
+    </table>
+
+    <table class='summary'><tr>
+        <td>{{../b.percentage}}: <b>{{this.percentage}}%</b></td>
+        {{#if ../isState}}<td>{{../b.division}}: <b>{{this.grade}}</b></td>{{/if}}
+        {{#unless ../isState}}<td>{{../b.overall}}: <b>{{this.grade}}</b></td>{{/unless}}
+        <td>{{../l.result}}: <b>{{this.outcome}}</b></td>
+      </tr>
+      {{#if this.extra}}<tr>
+          {{#each this.extra}}<td>{{this.label}}: <b>{{this.value}}</b></td>{{/each}}
+        </tr>{{/if}}</table>
+
+    {{#if ../isCbse}}
+      <div class='two'>
+        <div>
+          <div class='part'>{{../b.part2}}</div>
+          <table class='marks'>
+            <thead><tr><th class='subj'>{{../b.area}}</th><th>{{../l.grade}}</th></tr></thead>
+            <tbody>
+              {{#each this.coScholastic}}<tr><td class='subj'>{{this.label}}</td><td>{{this.grade}}</td></tr>{{/each}}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class='part'>{{../b.part3}}</div>
+          <table class='marks'>
+            <thead><tr><th class='subj'>{{../b.area}}</th><th>{{../l.grade}}</th></tr></thead>
+            <tbody><tr><td class='subj'>{{../b.discipline}}</td><td>{{this.discipline}}</td></tr></tbody>
+          </table>
+          <div class='note'>{{../b.threePoint}}</div>
+        </div>
+      </div>
+    {{/if}}
+
+    <div class='remarks'>{{../b.remarks}}: {{this.remarks}}</div>
+
+    {{#if ../scale}}
+      <table class='scale'><tr>
+          <td class='scale-head'>{{../b.scale}}</td>
+          {{#each ../scale}}<td>{{this.letter}}<br />{{this.range}}</td>{{/each}}
+        </tr></table>
+    {{/if}}
+
+    <table class='signs'><tr>
+        {{#each ../signatures}}<td>{{#if this.image}}<img class='sig' src='{{this.image}}'>{{/if}}<div class='line'></div>{{this.label}}</td>{{/each}}
+      </tr></table>
+    {{#if ../lh.footer}}<div class='footer'>{{../lh.footer}}</div>{{/if}}
+  </div>
+{{/each}}

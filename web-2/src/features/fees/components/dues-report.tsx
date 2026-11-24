@@ -1,12 +1,20 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import { BanknoteIcon } from "lucide-react"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { BanknoteIcon, BellRingIcon } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { useState } from "react"
 
-import { buttonVariants } from "~/components/ui/button"
+import { Button, buttonVariants } from "~/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog"
 import {
   Empty,
   EmptyDescription,
@@ -15,6 +23,7 @@ import {
 } from "~/components/ui/empty"
 import { NativeSelect, NativeSelectOption } from "~/components/ui/native-select"
 import { Skeleton } from "~/components/ui/skeleton"
+import { toast } from "~/components/ui/toast"
 import {
   Table,
   TableBody,
@@ -26,12 +35,14 @@ import {
 import { Can } from "~/features/access/can"
 import { classesQuery } from "~/features/academics/api"
 import { useSchoolFormat } from "~/features/settings/use-school-format"
+import { isApiError } from "~/lib/api/errors"
 import { cn } from "~/lib/utils"
 
 import {
   ageGroup,
   daysOverdue,
   defaultersQuery,
+  remindStudents,
   type AgeGroup,
   type Defaulter,
 } from "../api"
@@ -58,6 +69,7 @@ export function DuesReport() {
     .slice()
     .sort((a, b) => a.oldestDueDate.localeCompare(b.oldestDueDate))
   const sum = (list: Defaulter[]) => list.reduce((s, d) => s + d.overdue, 0)
+  const [reminding, setReminding] = useState(false)
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,7 +89,29 @@ export function DuesReport() {
               </NativeSelectOption>
             ))}
         </NativeSelect>
+        {shown.length > 0 && (
+          <Can permission="fees:collect">
+            <Button
+              variant="outline"
+              className="ms-auto"
+              onClick={() => setReminding(true)}
+            >
+              <BellRingIcon data-icon="inline-start" />
+              {t("remind.button", {
+                group: t(`group.${group}`),
+                n: f.number(shown.length),
+              })}
+            </Button>
+          </Can>
+        )}
       </div>
+      {reminding && (
+        <RemindDialog
+          students={shown}
+          groupLabel={t(`group.${group}`)}
+          onClose={() => setReminding(false)}
+        />
+      )}
 
       {report.isPending ? (
         <Skeleton className="h-28 rounded-xl" />
@@ -202,5 +236,86 @@ export function DuesReport() {
         </div>
       )}
     </div>
+  )
+}
+
+/** Shows who the reminder goes to, then sends it. */
+function RemindDialog({
+  students,
+  groupLabel,
+  onClose,
+}: {
+  students: Defaulter[]
+  groupLabel: string
+  onClose: () => void
+}) {
+  const t = useTranslations("fees.dues.remind")
+  const f = useSchoolFormat()
+  const total = students.reduce((s, d) => s + d.overdue, 0)
+  const send = useMutation({
+    mutationFn: () => remindStudents(students.map((s) => s.studentId)),
+    onSuccess: ({ sent }) => {
+      toast.add({
+        title: t("sent", { count: sent, n: f.number(sent) }),
+        description: t("sentHint"),
+        type: "success",
+      })
+      onClose()
+    },
+    onError: (error) =>
+      toast.add({
+        title: t("failed"),
+        description: isApiError(error) ? error.message : undefined,
+        type: "error",
+      }),
+  })
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t("title", { group: groupLabel })}</DialogTitle>
+          <DialogDescription>
+            {t("summary", {
+              count: students.length,
+              n: f.number(students.length),
+              amount: f.money(total),
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="max-h-64 divide-y overflow-y-auto rounded-lg border text-sm">
+          {students.map((s) => (
+            <li key={s.studentId} className="flex items-center gap-2 px-3 py-2">
+              <span className="min-w-0 flex-1 truncate">
+                {s.name}{" "}
+                <span className="text-muted-foreground">
+                  {s.className} {s.sectionName}
+                </span>
+              </span>
+              <span className="font-medium tabular-nums">
+                {f.money(s.overdue)}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="rounded-lg bg-muted p-3 text-sm">
+          {t("preview", {
+            name: students[0]?.name ?? "",
+            amount: f.money(students[0]?.overdue ?? 0),
+            date: f.date(students[0]?.oldestDueDate ?? ""),
+          })}
+        </p>
+        <p className="text-xs text-muted-foreground">{t("channels")}</p>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            {t("cancel")}
+          </Button>
+          <Button disabled={send.isPending} onClick={() => send.mutate()}>
+            {send.isPending
+              ? t("sending")
+              : t("send", { n: f.number(students.length) })}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

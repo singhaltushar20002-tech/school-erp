@@ -200,7 +200,7 @@ With sync, `docker compose up -d` and `npm run start:dev` are all you need. The 
    ```bash
    npm run start:dev
    ```
-   Then sign in on the platform with `admin@biprodas.dev` / `sadmin@123` and create the first school (see [First run](#first-run-creating-a-platform-admin)). The owner's activation email lands in Mailpit (http://localhost:8025).
+   Then sign in on the platform with `superadmin@platform.test` / `Admin@1234` and create the first school (see [First run](#first-run-creating-a-platform-admin)). The owner's activation email lands in Mailpit (http://localhost:8025).
 
 ### Check that it worked
 
@@ -319,12 +319,10 @@ npm run db:seed:core    # platform user accounts
 
 | Email | Username | Platform role | Console | Password |
 |-------|----------|---------------|---------|----------|
-| admin@biprodas.dev | sadmin | super_admin | everything | `sadmin@123` |
-| biprodas@biprodas.dev | biprodas | admin | all but platform staff | `biprodas@123` |
-| support@biprodas.dev | support | support | read-only, resend owner links | `support@123` |
-| dev@biprodas.dev | dev | developer | read-only | `dev@123` |
-| liyana@biprodas.dev | liyana | user | none | `liyana@123` |
-| demo@pitchpool.io | demo | user | none | `demo@123` |
+| superadmin@platform.test | superadmin | super_admin | everything | `Admin@1234` |
+| admin@platform.test | admin | admin | all but platform staff | `Admin@1234` |
+| support@platform.test | support | support | read-only, resend owner links | `Support@1234` |
+| developer@platform.test | developer | developer | read-only | `Developer@1234` |
 
 - **Re-runs:** the seeder is idempotent and matches users by email. New users are created ACTIVE and email-verified. Existing users get username, name and platform role re-synced but keep their current password.
 - **Transactions:** each seeder runs in one transaction, so a failure leaves nothing half-written.

@@ -114,6 +114,23 @@ export class TeachingService {
   }
 
   /** Assignment rows (current or ended) in a session's sections. */
+  /**
+   * Who teaches each class subject in each section now, for a session:
+   * `<sectionId>:<classSubjectId>` → the teacher's name (mark sheet lists).
+   */
+  async currentSubjectTeacherNames(
+    academicYearId: string,
+  ): Promise<Map<string, string>> {
+    const rows =
+      await this.subjectTeacherRepo.findCurrentInYear(academicYearId);
+    return new Map(
+      rows.map((r) => [
+        `${r.sectionId}:${r.classSubjectId}`,
+        r.employee?.fullName ?? '',
+      ]),
+    );
+  }
+
   async countInYear(academicYearId: string): Promise<number> {
     return (
       (await this.classTeacherRepo.countInYear(academicYearId)) +

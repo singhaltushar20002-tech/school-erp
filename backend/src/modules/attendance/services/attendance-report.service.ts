@@ -25,6 +25,7 @@ import {
   AttendanceRecordRepository,
   type StatusCount,
 } from '../repositories/attendance-record.repository';
+import { AttendanceCorrectionRepository } from '../repositories/attendance-correction.repository';
 import { AttendanceRegisterRepository } from '../repositories/attendance-register.repository';
 import {
   type AttendanceTally,
@@ -129,6 +130,7 @@ export class AttendanceReportService {
   constructor(
     private readonly registerRepo: AttendanceRegisterRepository,
     private readonly recordRepo: AttendanceRecordRepository,
+    private readonly correctionRepo: AttendanceCorrectionRepository,
     private readonly statuses: AttendanceStatusService,
     private readonly sections: SectionService,
     private readonly classes: ClassService,
@@ -210,6 +212,12 @@ export class AttendanceReportService {
   }
 
   /** The month's register grid for a section (also the PDF's data). */
+  /** Who changed which mark in a section's register during a month, and why. */
+  async corrections(sectionId: string, month: string) {
+    const { from, to } = monthRange(month);
+    return this.correctionRepo.findInSection(sectionId, from, to);
+  }
+
   async monthly(sectionId: string, month: string): Promise<MonthlyRegister> {
     const section = await this.sections.findById(sectionId);
     const { from, to } = monthRange(month);

@@ -77,6 +77,14 @@ export class ImportBatch extends OrgScopedEntity {
   rows: ImportRow[];
 
   /** Why the import failed as a whole (bad file, commit error). */
+  /** Template header → the file's header, when the file names them differently. */
+  @Column({ name: 'column_map', type: 'jsonb', nullable: true })
+  columnMap: Record<string, string> | null;
+
+  /** The file's header row, kept when columns couldn't be matched. */
+  @Column({ name: 'file_headers', type: 'jsonb', nullable: true })
+  fileHeaders: string[] | null;
+
   @Column({ name: 'failure', type: 'text', nullable: true })
   failure: string | null;
 

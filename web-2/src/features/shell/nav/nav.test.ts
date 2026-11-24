@@ -46,6 +46,8 @@ const TEACHER = [
   "exams:read",
   "results:read",
   "results:enter",
+  "homework:read",
+  "homework:manage",
   "notices:read",
   "notices:manage",
   "dashboard_teacher:read",
@@ -117,6 +119,8 @@ describe("visibleNav", () => {
           "leaveRequests",
           "holidays",
         ],
+        calendar: [],
+        homework: [],
         exams: ["examList", "markEntry", "results", "grading"],
       },
       people: { students: ["studentDirectory"], guardians: [] },
@@ -140,6 +144,7 @@ describe("visibleNav", () => {
           "payments",
           "dues",
           "feeSetup",
+          "openingBalances",
           "approvals",
         ],
         expenses: [],
@@ -234,7 +239,14 @@ describe("searchNav", () => {
 
   it("keeps every item of a menu whose label matches", () => {
     expect(shape(searchNav(nav, "staff", label)).people).toEqual({
-      staff: ["staffDirectory", "departments", "designations"],
+      staff: [
+        "staffDirectory",
+        "departments",
+        "designations",
+        "staffAttendance",
+        "staffLeave",
+        "substitutes",
+      ],
     })
   })
 

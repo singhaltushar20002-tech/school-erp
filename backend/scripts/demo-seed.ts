@@ -571,6 +571,44 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
       '/classes?limit=100',
     );
     for (const c of classes) classIds[c.level] = c.id;
+    // Two terms, as most CBSE schools report them.
+    for (const [i, term] of [
+      ['Term 1', YEAR_START, '2026-09-30'],
+      ['Term 2', '2026-10-01', YEAR_END],
+    ].entries()) {
+      await post(admin, '/terms', {
+        academicYearId: ids.year,
+        name: term[0],
+        startDate: term[1],
+        endDate: term[2],
+        sortOrder: i + 1,
+      });
+    }
+    // Rooms: a home room per section (floor by class) plus shared ones.
+    const roomIds: Record<string, string> = {};
+    for (let c = 1; c <= CLASSES; c++) {
+      for (const [i, name] of SECTIONS.entries()) {
+        const number = `${Math.ceil(c / 4)}${pad(((c - 1) % 4) * 2 + i + 1)}`;
+        roomIds[`${c}:${name}`] = (
+          await post(admin, '/rooms', {
+            name: `Room ${number}`,
+            building: c <= 5 ? 'Junior block' : 'Senior block',
+            capacity: 45,
+            type: 'classroom',
+          })
+        ).id;
+      }
+    }
+    for (const room of [
+      { name: 'Physics lab', type: 'lab', capacity: 30 },
+      { name: 'Chemistry lab', type: 'lab', capacity: 30 },
+      { name: 'Biology lab', type: 'lab', capacity: 30 },
+      { name: 'Computer lab', type: 'lab', capacity: 40 },
+      { name: 'Assembly hall', type: 'hall', capacity: 600 },
+      { name: 'Library', type: 'library', capacity: 60 },
+    ]) {
+      await post(admin, '/rooms', { ...room, building: 'Senior block' });
+    }
     for (let c = 1; c <= CLASSES; c++) {
       for (const name of SECTIONS) {
         sectionIds[`${c}:${name}`] = (
@@ -578,10 +616,26 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
             academicYearId: ids.year,
             classId: classIds[c],
             name,
+            roomId: roomIds[`${c}:${name}`],
+            capacity: 45,
           })
         ).id;
       }
     }
+    // Periods a week and pass/full marks for every class subject.
+    await root.query(
+      `UPDATE class_subjects cs SET
+         weekly_classes = CASE
+           WHEN s.name IN ('Mathematics', 'English', 'Science') THEN 6
+           WHEN s.name IN ('Hindi', 'Social Science', 'Physics', 'Chemistry',
+             'Biology', 'Accountancy', 'Business Studies', 'Economics') THEN 5
+           WHEN s.name = 'Environmental Studies' THEN 4
+           ELSE 2 END,
+         full_marks = 100, pass_marks = 33
+       FROM subjects s
+       WHERE s.id = cs.subject_id AND cs.academic_year_id = $1`,
+      [ids.year],
+    );
   });
 
   // Staff: 30 people, a class teacher for each of the 24 sections.
@@ -750,11 +804,173 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
         });
       }
     }
+    // Every other subject of every section has a subject teacher, so the
+    // exam overview can say whose mark sheet is missing. A teacher keeps one
+    // subject in either the junior (1–5) or senior (6–10) classes.
+    const teachers = (
+      await root.query<{ id: string }[]>(
+        `SELECT id FROM employees
+          WHERE org_id = $1 AND phone LIKE '90060%'
+            AND (email IS NULL OR email <> $2)
+          ORDER BY phone`,
+        [orgId, `teacher@${EMAIL_DOMAIN}`],
+      )
+    ).map((r) => r.id);
+    const classSubjects = await root.query<
+      { id: string; classId: string; name: string }[]
+    >(
+      `SELECT cs.id, cs.class_id AS "classId", s.name
+         FROM class_subjects cs JOIN subjects s ON s.id = cs.subject_id
+        WHERE cs.org_id = $1`,
+      [orgId],
+    );
+    const subjectNames = [...new Set(classSubjects.map((c) => c.name))].sort();
+    const assignments: {
+      sectionId: string;
+      classSubjectId: string;
+      employeeId: string;
+    }[] = [];
+    for (let c = 1; c <= CLASSES; c++) {
+      for (const cs of classSubjects.filter((x) => x.classId === classIds[c])) {
+        for (const s of SECTIONS) {
+          if (c === 5 && cs.name === 'Mathematics') continue;
+          const sectionId = sectionIds[`${c}:${s}`];
+          if (!sectionId) continue;
+          const slot = subjectNames.indexOf(cs.name) * 2 + (c > 5 ? 1 : 0);
+          assignments.push({
+            sectionId,
+            classSubjectId: cs.id,
+            employeeId: teachers[slot % teachers.length],
+          });
+        }
+      }
+    }
+    await pool(assignments, CONCURRENCY, (a) =>
+      post(admin, '/subject-teachers', a),
+    );
+    log(`  ${assignments.length + SECTIONS.length} subject teachers`);
   });
 
   // Fees: class-wise structures, concessions, a late fine.
   const heads: Record<string, string> = {};
   const discount: Record<string, string> = {};
+  // Departments by subject and designations by level (PRT/TGT/PGT), with
+  // each designation's default role for future invites.
+  await step('departments and designations', async () => {
+    const roles = await get<{ id: string; name: string }[]>(
+      admin,
+      '/roles?limit=100',
+    );
+    const roleId = (name: string) => roles.find((r) => r.name === name)?.id;
+    const departments: Record<string, string> = {};
+    for (const [name, code] of [
+      ['Science', 'SCI'],
+      ['Mathematics', 'MATH'],
+      ['Languages', 'LANG'],
+      ['Social Science', 'SST'],
+      ['Commerce', 'COM'],
+      ['Arts & Sports', 'ART'],
+      ['Primary', 'PRI'],
+      ['Administration', 'ADM'],
+      ['Accounts', 'ACC'],
+      ['Library', 'LIB'],
+    ]) {
+      departments[name] = (
+        await post(admin, '/departments', { name, code })
+      ).id;
+    }
+    const designations: Record<string, string> = {};
+    for (const [title, role, description] of [
+      ['Principal', 'principal', 'Head of the school'],
+      ['PGT', 'teacher', 'Post-graduate teacher (classes 11–12)'],
+      ['TGT', 'teacher', 'Trained graduate teacher (classes 6–10)'],
+      ['PRT', 'teacher', 'Primary teacher (classes 1–5)'],
+      ['Accountant', 'accountant', 'Fees and payroll'],
+      ['Office Assistant', 'receptionist', 'Front desk and admissions'],
+      ['Librarian', 'librarian', 'Library'],
+    ]) {
+      designations[title] = (
+        await post(admin, '/designations', {
+          title,
+          description,
+          defaultRoleId: roleId(role),
+        })
+      ).id;
+    }
+    const set = (email: string, designation: string, department: string) =>
+      root.query(
+        `UPDATE employees SET designation_id = $3, department_id = $4,
+           employment_type = 'permanent', qualification = $5
+          WHERE org_id = $1 AND email = $2`,
+        [
+          orgId,
+          email,
+          designations[designation],
+          departments[department],
+          designation === 'Principal' ? 'M.Sc., B.Ed.' : 'B.Com.',
+        ],
+      );
+    await set(`principal@${EMAIL_DOMAIN}`, 'Principal', 'Administration');
+    await set(`accounts@${EMAIL_DOMAIN}`, 'Accountant', 'Accounts');
+    await set(`office@${EMAIL_DOMAIN}`, 'Office Assistant', 'Administration');
+    await set(`library@${EMAIL_DOMAIN}`, 'Librarian', 'Library');
+    // Teachers: level from their class-teacher section (else the highest
+    // class they teach), department from the subject they teach most.
+    const teachers = await root.query<
+      { id: string; top: number | null; subject: string | null }[]
+    >(
+      `SELECT e.id,
+              COALESCE((SELECT c.level FROM class_teachers ct
+                 JOIN sections sec ON sec.id = ct.section_id
+                 JOIN classes c ON c.id = sec.class_id
+                WHERE ct.employee_id = e.id AND ct.effective_to IS NULL
+                LIMIT 1),
+              (SELECT max(c.level) FROM subject_teachers st
+                 JOIN sections sec ON sec.id = st.section_id
+                 JOIN classes c ON c.id = sec.class_id
+                WHERE st.employee_id = e.id AND st.effective_to IS NULL)) AS top,
+              (SELECT s.name FROM subject_teachers st
+                 JOIN class_subjects cs ON cs.id = st.class_subject_id
+                 JOIN subjects s ON s.id = cs.subject_id
+                WHERE st.employee_id = e.id AND st.effective_to IS NULL
+                GROUP BY s.name ORDER BY count(*) DESC, s.name LIMIT 1) AS subject
+         FROM employees e
+        WHERE e.org_id = $1 AND e.phone LIKE '90060%'`,
+      [orgId],
+    );
+    const departmentOf = (subject: string | null, top: number | null) => {
+      const s = subject ?? '';
+      if ((top ?? 0) <= 5) return 'Primary';
+      if (/Math/.test(s)) return 'Mathematics';
+      if (/Science|Physics|Chemistry|Biology|Computer/.test(s))
+        return /Social/.test(s) ? 'Social Science' : 'Science';
+      if (/English|Hindi|Sanskrit/.test(s)) return 'Languages';
+      if (/Accountancy|Business|Economics/.test(s)) return 'Commerce';
+      if (/History|Geography|Political/.test(s)) return 'Social Science';
+      return 'Arts & Sports';
+    };
+    for (const [i, t] of teachers.entries()) {
+      const level = t.top ?? 6;
+      await root.query(
+        `UPDATE employees SET designation_id = $2, department_id = $3,
+           employment_type = $4, qualification = $5 WHERE id = $1`,
+        [
+          t.id,
+          designations[level >= 11 ? 'PGT' : level >= 6 ? 'TGT' : 'PRT'],
+          departments[departmentOf(t.subject, t.top)],
+          i % 9 === 8 ? 'contract' : 'permanent',
+          level >= 11 ? 'M.A./M.Sc., B.Ed.' : 'B.A./B.Sc., B.Ed.',
+        ],
+      );
+    }
+    // Next year's session, so Promotions has somewhere to go.
+    await post(admin, '/academic-years', {
+      name: '2027–2028',
+      startDate: '2027-04-01',
+      endDate: '2028-03-31',
+    });
+  });
+
   await step('fee structures, concessions and late fine', async () => {
     for (const h of await get<{ id: string; name: string }[]>(
       admin,
@@ -1135,6 +1351,42 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
       [orgId, owner.id],
     );
     log(`  ${days.length} school days`);
+    // A few corrections in Class 5 A this month, made the proper way so the
+    // register shows who changed what and why.
+    const absences = await root.query<
+      { enrollment_id: string; date: string }[]
+    >(
+      `SELECT rec.enrollment_id, to_char(reg.date, 'YYYY-MM-DD') AS date
+         FROM attendance_records rec
+         JOIN attendance_registers reg ON reg.id = rec.register_id
+        WHERE rec.org_id = $1 AND reg.section_id = $2
+          AND rec.status_code = 'absent'
+          AND reg.date >= date_trunc('month', $3::date) AND reg.date < $3::date
+        ORDER BY reg.date DESC
+        LIMIT 3`,
+      [orgId, sectionIds[DEMO_TEACHER_SECTION], today],
+    );
+    const reasons = [
+      'Arrived after roll call; was in the school bus that came late',
+      'Parent sent a medical note the next morning',
+      'Marked absent by mistake; was at the inter-school quiz',
+    ];
+    for (const [i, a] of absences.entries()) {
+      await put(
+        admin,
+        `/attendance/sections/${sectionIds[DEMO_TEACHER_SECTION]}?date=${a.date}`,
+        {
+          records: [
+            {
+              enrollmentId: a.enrollment_id,
+              status: i === 0 ? 'late' : i === 1 ? 'leave' : 'present',
+            },
+          ],
+          reason: reasons[i],
+        },
+      );
+    }
+    log(`  ${absences.length} register corrections`);
   });
 
   // Half-Yearly exam, classes 1–10: marked, approved, tabulated, published.
@@ -1221,6 +1473,33 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
     log(
       `  ${sheets.length} mark sheets, ${published} of ${definitions.length} results published`,
     );
+    // The class teachers' co-scholastic grades and remarks, so the CBSE
+    // report cards print complete.
+    await root.query(
+      `UPDATE results r
+          SET co_scholastic = jsonb_build_object(
+                'work_education', (ARRAY['A','A','A','B','B','C'])[1 + floor(random() * 6)::int],
+                'art_education', (ARRAY['A','A','B','B','B','C'])[1 + floor(random() * 6)::int],
+                'health_physical', (ARRAY['A','A','A','B','B','C'])[1 + floor(random() * 6)::int],
+                'discipline', (ARRAY['A','A','A','A','B','C'])[1 + floor(random() * 6)::int]),
+              remarks = CASE
+                WHEN r.percentage >= 85 THEN (ARRAY[
+                  'Excellent work. Keep it up!',
+                  'A sincere and hardworking student.',
+                  'Outstanding performance across subjects.'])[1 + floor(random() * 3)::int]
+                WHEN r.percentage >= 60 THEN (ARRAY[
+                  'Good progress. Can do even better with regular revision.',
+                  'Attentive in class; should practise writing answers.',
+                  'Steady effort. Participates well in class activities.'])[1 + floor(random() * 3)::int]
+                ELSE (ARRAY[
+                  'Needs to give more time to studies at home.',
+                  'Should revise daily and ask doubts in class.',
+                  'Capable of more; please ensure regular homework.'])[1 + floor(random() * 3)::int]
+              END
+         FROM result_definitions d
+        WHERE d.id = r.result_definition_id AND d.org_id = $1 AND r.org_id = $1`,
+      [orgId],
+    );
     // Report cards for the demo family's sections, so the parent can open
     // them on the phone.
     for (const key of ['5:A', '8:B']) {
@@ -1243,6 +1522,783 @@ async function seed(app: INestApplication, root: DataSource, base: string) {
           `  report cards for ${key}: ${(err as Error).message.slice(0, 200)}`,
         );
       }
+    }
+  });
+
+  // Unit Test 2, still open: most sheets submitted, some saved as drafts,
+  // some not started (the exam in-charge chases those). Class 5 A Maths
+  // is left empty for the class teacher to fill in during the demo.
+  await step('Unit Test 2 (in progress)', async () => {
+    const examId = (
+      await post(admin, '/exams', {
+        academicYearId: ids.year,
+        name: 'Unit Test 2',
+      })
+    ).id;
+    await post(admin, `/exams/${examId}/subjects`, {
+      classIds: Array.from({ length: 10 }, (_, i) => classIds[i + 1]),
+    });
+    await post(admin, `/exams/${examId}/open`);
+    const sheets = await get<
+      (Row & { sectionId: string; subjectName: string })[]
+    >(admin, `/exams/${examId}/mark-sheets`);
+    let submitted = 0;
+    let drafts = 0;
+    await pool(sheets, CONCURRENCY, async (sheet) => {
+      if (
+        sheet.sectionId === sectionIds[DEMO_TEACHER_SECTION] &&
+        sheet.subjectName === 'Mathematics'
+      ) {
+        return;
+      }
+      const x = rand();
+      if (x < 0.15) return; // not started
+      const grid = await get<{
+        subject: { components: { id: string; fullMarks: number }[] };
+        students: { enrollmentId: string }[];
+      }>(admin, `/mark-sheets/${sheet.id}/marks`);
+      const entries = grid.students.flatMap((st) =>
+        grid.subject.components.map((c) => ({
+          enrollmentId: st.enrollmentId,
+          componentId: c.id,
+          value: Math.round(c.fullMarks * (0.5 + rand() * 0.48)),
+        })),
+      );
+      if (entries.length) {
+        await put(admin, `/mark-sheets/${sheet.id}/marks`, { entries });
+      }
+      if (x < 0.3) {
+        drafts++;
+        return; // saved, not submitted
+      }
+      await post(admin, `/mark-sheets/${sheet.id}/submit`);
+      submitted++;
+    });
+    log(`  ${sheets.length} sheets: ${submitted} submitted, ${drafts} drafts`);
+  });
+
+  // A handful of this week's admissions for the principal's dashboard.
+  await root.query(
+    `UPDATE students SET admission_date = CURRENT_DATE - (n % 6)::int
+       FROM (SELECT id, row_number() OVER (ORDER BY admission_number DESC) AS n
+               FROM students WHERE org_id = $1 AND deleted_at IS NULL) x
+      WHERE students.id = x.id AND x.n <= 6`,
+    [orgId],
+  );
+
+  // Months of back-dated payments and reminders are history, not news:
+  // mark them sent so parents' feeds (and new reminders) aren't stuck
+  // behind thousands of old events. Today's payments still notify.
+  await root.query(
+    `UPDATE domain_events ev SET processed_at = now()
+      WHERE ev.org_id = $1 AND ev.processed_at IS NULL
+        AND (ev.type = 'fees.due_reminder'
+          OR (ev.type = 'payment.received' AND EXISTS (
+                SELECT 1 FROM receipts r JOIN payments p ON p.id = r.payment_id
+                 WHERE r.id = (ev.payload->>'receiptId')::uuid
+                   AND p.received_on < CURRENT_DATE)))`,
+    [orgId],
+  );
+
+  // Phase 4: periods and a published timetable for every section, the
+  // term's events, homework in Class 5 A, and admission enquiries.
+  await step('timetable, calendar, homework and enquiries', async () => {
+    const times = [
+      ['08:00', '08:45'],
+      ['08:45', '09:30'],
+      ['09:30', '10:15'],
+      ['10:15', '11:00'],
+      ['11:20', '12:05'],
+      ['12:05', '12:50'],
+      ['12:50', '13:35'],
+    ];
+    const periods = await root.query<{ id: string; display_order: number }[]>(
+      `INSERT INTO periods (org_id, name, start_time, end_time, display_order)
+       SELECT $1, 'Period ' || n, t[1]::time, t[2]::time, n
+         FROM unnest($2::text[]) WITH ORDINALITY AS x(pair, n)
+         CROSS JOIN LATERAL (SELECT string_to_array(pair, '-') AS t) p
+       RETURNING id, display_order`,
+      [orgId, times.map(([a, b]) => `${a}-${b}`)],
+    );
+    periods.sort((a, b) => a.display_order - b.display_order);
+    const teaching = await root.query<
+      {
+        section_id: string;
+        class_id: string;
+        academic_year_id: string;
+        subject_id: string;
+        employee_id: string;
+      }[]
+    >(
+      `SELECT sec.id AS section_id, sec.class_id, sec.academic_year_id,
+              cs.subject_id, st.employee_id
+         FROM sections sec
+         JOIN class_subjects cs
+           ON cs.class_id = sec.class_id AND cs.academic_year_id = sec.academic_year_id
+         JOIN subject_teachers st
+           ON st.section_id = sec.id AND st.class_subject_id = cs.id
+          AND st.effective_to IS NULL
+        WHERE sec.org_id = $1
+        ORDER BY sec.id, cs.id`,
+      [orgId],
+    );
+    const bySection = new Map<string, typeof teaching>();
+    for (const r of teaching) {
+      bySection.set(r.section_id, [...(bySection.get(r.section_id) ?? []), r]);
+    }
+    const days = [
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const cols: string[][] = [[], [], [], [], [], [], [], []];
+    let shift = 0;
+    // A teacher is in one class per period: take the rotation's subject,
+    // else the next whose teacher is free; no one free leaves it empty.
+    const busy = new Set<string>();
+    for (const [sectionId, subjects] of bySection) {
+      shift++;
+      days.forEach((day, d) =>
+        periods.forEach((period, p) => {
+          const start = d * 3 + p + shift;
+          let pick: (typeof subjects)[number] | undefined;
+          for (let k = 0; k < subjects.length; k++) {
+            const c = subjects[(start + k) % subjects.length];
+            if (!busy.has(`${day}:${period.id}:${c.employee_id}`)) {
+              pick = c;
+              break;
+            }
+          }
+          if (!pick) return;
+          busy.add(`${day}:${period.id}:${pick.employee_id}`);
+          cols[0].push(orgId);
+          cols[1].push(pick.academic_year_id);
+          cols[2].push(pick.class_id);
+          cols[3].push(sectionId);
+          cols[4].push(day);
+          cols[5].push(period.id);
+          cols[6].push(pick.subject_id);
+          cols[7].push(pick.employee_id);
+        }),
+      );
+    }
+    await root.query(
+      `INSERT INTO class_timetables (org_id, academic_year_id, class_id, section_id,
+         day_of_week, period_id, subject_id, employee_id)
+       SELECT * FROM unnest($1::uuid[], $2::uuid[], $3::uuid[], $4::uuid[],
+         $5::text[], $6::uuid[], $7::uuid[], $8::uuid[])`,
+      cols,
+    );
+    await root.query(
+      `INSERT INTO timetable_publications (org_id, section_id, published_at, published_by)
+       SELECT $1, id, now(), $2 FROM sections WHERE org_id = $1`,
+      [orgId, owner.id],
+    );
+    log(`  ${cols[0].length} timetable periods in ${bySection.size} sections`);
+
+    // The term's events (PTM, sports day, annual day…).
+    const events: [string, string, number, number, boolean, string | null][] = [
+      [
+        'Parent-teacher meeting',
+        'ptm',
+        6,
+        6,
+        true,
+        'Meet the class teacher, 9 am to 1 pm. Report cards will be discussed.',
+      ],
+      [
+        'Annual sports day',
+        'sports',
+        14,
+        15,
+        true,
+        'Track events on day one, team games on day two. Sports uniform.',
+      ],
+      [
+        'Science exhibition',
+        'activity',
+        24,
+        24,
+        true,
+        'Classes 6 to 10 present their projects in the school hall.',
+      ],
+      ['Staff meeting: half-yearly review', 'meeting', 3, 3, false, null],
+      [
+        'Annual day rehearsal',
+        'event',
+        32,
+        34,
+        true,
+        'Participants stay till 3 pm.',
+      ],
+      [
+        'Annual day',
+        'event',
+        36,
+        36,
+        true,
+        'Parents are invited. Programme starts 5 pm in the school ground.',
+      ],
+    ];
+    for (const [title, kind, from, to, forParents, description] of events) {
+      await root.query(
+        `INSERT INTO school_events (org_id, title, description, kind, date_from, date_to, for_parents, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          orgId,
+          title,
+          description,
+          kind,
+          addDays(today, from),
+          addDays(today, to),
+          forParents,
+          owner.id,
+        ],
+      );
+    }
+
+    // Homework in Class 5 A: a few due soon, a couple past with submissions.
+    const fiveA = sectionIds['5:A'];
+    const fiveASubjects = await root.query<{ id: string; name: string }[]>(
+      `SELECT cs.id, sub.name FROM class_subjects cs
+         JOIN subjects sub ON sub.id = cs.subject_id
+         JOIN sections sec ON sec.class_id = cs.class_id AND sec.academic_year_id = cs.academic_year_id
+        WHERE sec.id = $1`,
+      [fiveA],
+    );
+    const subjectId = (name: string) =>
+      fiveASubjects.find((x) => x.name === name)?.id ?? fiveASubjects[0].id;
+    const homework: [string, string, string, number, number][] = [
+      [
+        'Mathematics',
+        'Exercise 6.2: questions 1 to 12',
+        'Show all working in your maths notebook.',
+        -9,
+        -6,
+      ],
+      [
+        'English',
+        'Write a letter to your friend about Diwali',
+        'About 120 words. Use the format we practised in class.',
+        -7,
+        -3,
+      ],
+      [
+        'Environmental Studies',
+        'Draw and label the water cycle',
+        'On an A4 sheet; colour it.',
+        -2,
+        2,
+      ],
+      [
+        'Mathematics',
+        'Fractions worksheet',
+        'Complete both sides of the worksheet given in class.',
+        -1,
+        1,
+      ],
+      [
+        'Hindi',
+        'पाठ 7 के प्रश्न-उत्तर लिखें',
+        'कॉपी में साफ़-साफ़ लिखें।',
+        0,
+        3,
+      ],
+    ];
+    const enrolled = await root.query<{ id: string }[]>(
+      `SELECT id FROM student_enrollments WHERE section_id = $1 AND status = 'active' ORDER BY roll_no`,
+      [fiveA],
+    );
+    for (const [subject, title, description, set, due] of homework) {
+      const [row] = await root.query<{ id: string }[]>(
+        `INSERT INTO homework (org_id, section_id, class_subject_id, title, description, assigned_on, due_date, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        [
+          orgId,
+          fiveA,
+          subjectId(subject),
+          title,
+          description,
+          addDays(today, set),
+          addDays(today, due),
+          owner.id,
+        ],
+      );
+      if (due < 0) {
+        // Most handed it in; a few didn't.
+        const handed = enrolled.filter((_, i) => i % 7 !== 3 && i % 11 !== 5);
+        await root.query(
+          `INSERT INTO homework_submissions (org_id, homework_id, enrollment_id, marked_by, marked_at)
+           SELECT $1, $2, e, $3, now() FROM unnest($4::uuid[]) AS e`,
+          [orgId, row.id, owner.id, handed.map((e) => e.id)],
+        );
+      }
+    }
+
+    // Admission enquiries for next session, at every stage.
+    const enquiries: [
+      string,
+      number,
+      string,
+      string,
+      string,
+      string,
+      number | null,
+      string | null,
+    ][] = [
+      [
+        'Ishaan Malhotra',
+        1,
+        'Rohit Malhotra',
+        '9811100001',
+        'walk_in',
+        'new',
+        1,
+        null,
+      ],
+      [
+        'Myra Kapoor',
+        1,
+        'Neha Kapoor',
+        '9811100002',
+        'website',
+        'new',
+        0,
+        null,
+      ],
+      [
+        'Vivaan Sethi',
+        3,
+        'Amit Sethi',
+        '9811100003',
+        'phone',
+        'contacted',
+        2,
+        null,
+      ],
+      [
+        'Anaya Bhatt',
+        6,
+        'Kavita Bhatt',
+        '9811100004',
+        'referral',
+        'contacted',
+        -1,
+        null,
+      ],
+      [
+        'Reyansh Arora',
+        2,
+        'Sunil Arora',
+        '9811100005',
+        'walk_in',
+        'visited',
+        3,
+        null,
+      ],
+      [
+        'Kiara Chawla',
+        4,
+        'Pooja Chawla',
+        '9811100006',
+        'social',
+        'visited',
+        0,
+        null,
+      ],
+      [
+        'Advait Joshi',
+        9,
+        'Manish Joshi',
+        '9811100007',
+        'phone',
+        'lost',
+        null,
+        'Chose a school nearer home',
+      ],
+      [
+        'Saanvi Goel',
+        1,
+        'Ritu Goel',
+        '9811100008',
+        'website',
+        'new',
+        null,
+        null,
+      ],
+    ];
+    for (const [
+      name,
+      cls,
+      parent,
+      phone,
+      source,
+      stage,
+      follow,
+      lost,
+    ] of enquiries) {
+      await root.query(
+        `INSERT INTO enquiries (org_id, student_name, class_id, guardian_name, phone, source, stage, follow_up_on, lost_reason, created_by, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now() - (random() * interval '20 days'))`,
+        [
+          orgId,
+          name,
+          classIds[cls],
+          parent,
+          `+91${phone}`,
+          source,
+          stage,
+          follow === null ? null : addDays(today, follow),
+          lost,
+          owner.id,
+        ],
+      );
+    }
+    log(
+      `  ${events.length} events, ${homework.length} homework, ${enquiries.length} enquiries`,
+    );
+  });
+
+  // Phase 5: staff register and leave, substitutes, transport, library
+  // and payroll.
+  await step('staff attendance, transport, library and payroll', async () => {
+    const staff = await root.query<
+      { id: string; first_name: string; title: string | null }[]
+    >(
+      `SELECT e.id, e.first_name, d.title FROM employees e
+         LEFT JOIN designations d ON d.id = e.designation_id
+        WHERE e.org_id = $1 AND e.status = 'active' ORDER BY e.first_name`,
+      [orgId],
+    );
+    // The last school day on or before today (Sunday off).
+    let lastDay = today;
+    while (new Date(`${lastDay}T00:00:00Z`).getUTCDay() === 0)
+      lastDay = addDays(lastDay, -1);
+    const monthStart = `${today.slice(0, 7)}-01`;
+    const prevStart = `${addDays(monthStart, -1).slice(0, 7)}-01`;
+    await root.query(
+      `INSERT INTO staff_attendance (org_id, employee_id, date, status, marked_by)
+       SELECT $1, e.id, d::date,
+              CASE WHEN r < 0.03 THEN 'absent' WHEN r < 0.07 THEN 'late'
+                   WHEN r < 0.08 THEN 'half_day' ELSE 'present' END,
+              $2
+         FROM employees e
+         CROSS JOIN generate_series($3::date, $4::date, interval '1 day') AS d
+         CROSS JOIN LATERAL (SELECT random() + 0 * length(e.id::text) + 0 * extract(day from d) AS r) x
+        WHERE e.org_id = $1 AND e.status = 'active' AND extract(isodow from d) <> 7`,
+      [orgId, owner.id, prevStart, lastDay],
+    );
+    // Two teachers away on the last school day: one absent, one on leave.
+    const byName = (first: string) =>
+      staff.find((x) => x.first_name === first)?.id;
+    const absent = byName('Jyoti');
+    const onLeave = byName('Rajeev');
+    if (absent) {
+      await put(admin, '/staff-attendance', {
+        date: lastDay,
+        records: [{ employeeId: absent, status: 'absent' }],
+      });
+    }
+    if (onLeave) {
+      await post(admin, '/staff-leaves', {
+        employeeId: onLeave,
+        fromDate: lastDay,
+        leaveType: 'casual',
+        reason: 'Family function',
+        approved: true,
+      });
+    }
+    const sick = byName('Vandana');
+    if (sick) {
+      await post(admin, '/staff-leaves', {
+        employeeId: sick,
+        fromDate: addDays(today, 2),
+        toDate: addDays(today, 3),
+        leaveType: 'sick',
+        reason: 'Doctor advised rest',
+      });
+    }
+    const uncovered = await get<{
+      periods: { timetableId: string; free: { id: string }[] }[];
+    }>(admin, `/substitutions?date=${lastDay}`);
+    const firstGap = uncovered.periods.find((x) => x.free.length);
+    if (firstGap) {
+      await put(admin, '/substitutions', {
+        date: lastDay,
+        timetableId: firstGap.timetableId,
+        employeeId: firstGap.free[0].id,
+      });
+    }
+
+    // Transport: three routes in Lucknow, students on their stops.
+    const routes: [
+      string,
+      string,
+      string,
+      string,
+      number,
+      [string, string, string][],
+    ][] = [
+      [
+        'Route 1: Gomti Nagar',
+        'UP32 AB 1234',
+        'Ramesh Yadav',
+        '9839012345',
+        1200_00,
+        [
+          ['Patrakarpuram', '07:00', '14:50'],
+          ['Vibhuti Khand', '07:08', '14:42'],
+          ['Indira Gandhi Pratishthan', '07:16', '14:34'],
+          ['Chinhat Tiraha', '07:25', '14:25'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+      [
+        'Route 2: Indira Nagar',
+        'UP32 CD 5678',
+        'Suresh Kumar',
+        '9839023456',
+        1100_00,
+        [
+          ['Munshi Pulia', '07:05', '14:45'],
+          ['Lekhraj Market', '07:12', '14:38'],
+          ['Bhootnath', '07:20', '14:30'],
+          ['Kapoorthala', '07:28', '14:22'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+      [
+        'Route 3: Aliganj',
+        'UP32 EF 9012',
+        'Dinesh Pal',
+        '9839034567',
+        1000_00,
+        [
+          ['Puraniya', '07:02', '14:48'],
+          ['Sector Q', '07:10', '14:40'],
+          ['Kursi Road', '07:18', '14:32'],
+          ['Kapoorthala Chauraha', '07:27', '14:23'],
+          ['School gate', '07:40', '14:10'],
+        ],
+      ],
+    ];
+    const stopIds: string[] = [];
+    for (const [name, vehicle, driver, phone, fee, stops] of routes) {
+      const r = await post<{ stops: { id: string; name: string }[] }>(
+        admin,
+        '/transport/routes',
+        {
+          name,
+          vehicleNumber: vehicle,
+          driverName: driver,
+          driverPhone: phone,
+          monthlyFee: fee,
+          stops: stops.map(([n, pickupTime, dropTime]) => ({
+            name: n,
+            pickupTime,
+            dropTime,
+          })),
+        },
+      );
+      stopIds.push(
+        ...r.stops.filter((x) => x.name !== 'School gate').map((x) => x.id),
+      );
+    }
+    const riders = await root.query<{ id: string }[]>(
+      `SELECT s.id FROM students s
+        WHERE s.org_id = $1 AND (
+          s.id IN (SELECT sg.student_id FROM student_guardians sg JOIN guardians g ON g.id = sg.guardian_id
+                    WHERE g.org_id = $1 AND g.phone = $2)
+          OR random() < 0.12)
+        LIMIT 90`,
+      [orgId, `+91${PARENT_PHONE}`],
+    );
+    await root.query(
+      `INSERT INTO transport_assignments (org_id, student_id, stop_id)
+       SELECT $1, s, ($3::uuid[])[1 + (row_number() OVER () % cardinality($3::uuid[]))]
+         FROM unnest($2::uuid[]) AS s
+       ON CONFLICT DO NOTHING`,
+      [orgId, riders.map((r) => r.id), stopIds],
+    );
+    const billed = await post<{ created: number }>(
+      admin,
+      '/transport/billing',
+      {
+        period: today.slice(0, 7),
+      },
+    );
+    log(
+      `  ${riders.length} students on 3 routes, ${billed.created} transport bills`,
+    );
+
+    // Library: a small catalogue and books out, some overdue.
+    const books: [string, string, string, number][] = [
+      ['Malgudi Days', 'R. K. Narayan', 'Fiction', 3],
+      ['The Blue Umbrella', 'Ruskin Bond', 'Fiction', 3],
+      ['Panchatantra Stories', 'Vishnu Sharma', 'Stories', 4],
+      ['Wings of Fire', 'A. P. J. Abdul Kalam', 'Biography', 2],
+      ['Godaan', 'Munshi Premchand', 'Hindi', 2],
+      ['Rusty Runs Away', 'Ruskin Bond', 'Fiction', 2],
+      ['Tenali Raman Tales', 'Various', 'Stories', 3],
+      ['Discovery of India', 'Jawaharlal Nehru', 'History', 1],
+      ['NCERT Science Activity Book', 'NCERT', 'Reference', 3],
+      ['Oxford Student Atlas for India', 'Oxford', 'Reference', 2],
+      ['Swami and Friends', 'R. K. Narayan', 'Fiction', 2],
+      ['Akbar Birbal Stories', 'Various', 'Stories', 3],
+    ];
+    const accessions: string[] = [];
+    for (const [title, author, category, copies] of books) {
+      const b = await post<{ accessions: string[] }>(admin, '/library/books', {
+        title,
+        author,
+        category,
+        copies,
+      });
+      accessions.push(b.accessions[0]);
+    }
+    const readers = await root.query<{ admission_number: string }[]>(
+      `SELECT s.admission_number FROM students s
+        WHERE s.org_id = $1 AND (
+          s.id IN (SELECT sg.student_id FROM student_guardians sg JOIN guardians g ON g.id = sg.guardian_id
+                    WHERE g.org_id = $1 AND g.phone = $2)
+          OR random() < 0.02)
+        LIMIT 12`,
+      [orgId, `+91${PARENT_PHONE}`],
+    );
+    for (const [i, r] of readers.entries()) {
+      if (!accessions[i]) break;
+      await post(admin, '/library/issues', {
+        accessionNo: accessions[i],
+        studentId: r.admission_number,
+      });
+    }
+    // Back-date a third of the loans so some are overdue.
+    await root.query(
+      `UPDATE library_issues SET issued_on = $2::date - 24, due_on = $2::date - 10
+        WHERE id IN (SELECT id FROM library_issues WHERE org_id = $1 ORDER BY id LIMIT 4)`,
+      [orgId, today],
+    );
+
+    // Payroll: everyone's salary, and last month's payroll finalised.
+    for (const p of staff) {
+      const senior = /principal|head|vice/i.test(p.title ?? '');
+      const teacher = /teacher/i.test(p.title ?? '') || !p.title;
+      const basic = senior
+        ? 55_000_00
+        : teacher
+          ? 26_000_00 + (p.first_name.length % 5) * 1_500_00
+          : 14_000_00;
+      await put(admin, `/payroll/structures/${p.id}`, {
+        basic,
+        hra: Math.round(basic * 0.4),
+        da: Math.round(basic * 0.12),
+        otherAllowances: teacher || senior ? 2_000_00 : 1_000_00,
+        pfApplicable: true,
+        esiApplicable: basic * 1.52 + 1_000_00 <= 21_000_00,
+        tdsMonthly: senior ? 6_500_00 : basic >= 30_000_00 ? 1_200_00 : 0,
+      });
+    }
+    const run = await post<{ id: string; payslips: unknown[] }>(
+      admin,
+      '/payroll/runs',
+      {
+        period: prevStart.slice(0, 7),
+      },
+    );
+    await post(admin, `/payroll/runs/${run.id}/finalize`);
+    log(
+      `  ${books.length} titles, ${readers.length} loans; payroll for ${prevStart.slice(0, 7)}: ${run.payslips.length} payslips`,
+    );
+  });
+
+  // Running costs from April to this month, so the expense list and the
+  // cash and bank books show money going out as well as coming in.
+  await step('expenses', async () => {
+    const categories: Record<string, string> = {};
+    for (const name of [
+      'Electricity',
+      'Water',
+      'Stationery & printing',
+      'Repairs & maintenance',
+      'Bus fuel',
+      'Events & functions',
+      'Internet & phone',
+    ]) {
+      categories[name] = (
+        await post(accountant, '/expenses/categories', { name })
+      ).id;
+    }
+    const monthly: [string, number, 'cash' | 'bank', number, string][] = [
+      ['Electricity', 4_200_000, 'bank', 6, 'UPPCL bill'],
+      ['Water', 380_000, 'bank', 8, 'Jal Kal bill'],
+      ['Internet & phone', 299_900, 'bank', 5, 'Broadband and office phone'],
+      ['Bus fuel', 6_500_000, 'cash', 3, 'Diesel for 3 buses'],
+      [
+        'Stationery & printing',
+        850_000,
+        'cash',
+        12,
+        'Registers, chalk, printer toner',
+      ],
+    ];
+    const end = today;
+    for (let m = 4; m <= 11; m++) {
+      const month = `2026-${pad(m)}`;
+      for (const [category, amount, paidFrom, day, note] of monthly) {
+        const date = `${month}-${pad(day)}`;
+        if (date > end) continue;
+        // A little month-to-month variation, as real bills have.
+        const varied = Math.round((amount * (90 + ((m * day) % 21))) / 100);
+        await post(accountant, '/expenses', {
+          categoryId: categories[category],
+          amount: varied,
+          paidFrom,
+          date,
+          note,
+        });
+      }
+    }
+    for (const [category, amount, paidFrom, date, note] of [
+      [
+        'Repairs & maintenance',
+        1_850_000,
+        'cash',
+        '2026-06-20',
+        'Classroom fans and wiring',
+      ],
+      [
+        'Events & functions',
+        4_500_000,
+        'bank',
+        '2026-08-14',
+        'Independence Day celebration',
+      ],
+      [
+        'Repairs & maintenance',
+        2_400_000,
+        'bank',
+        '2026-10-05',
+        'Painting of junior block',
+      ],
+      [
+        'Events & functions',
+        6_200_000,
+        'bank',
+        '2026-11-14',
+        "Children's Day and annual sports",
+      ],
+    ] as const) {
+      if (date > end) continue;
+      await post(accountant, '/expenses', {
+        categoryId: categories[category],
+        amount,
+        paidFrom,
+        date,
+        note,
+      });
     }
   });
 

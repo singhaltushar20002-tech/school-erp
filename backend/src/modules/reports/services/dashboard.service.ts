@@ -101,11 +101,106 @@ export class DashboardService {
             ),
           },
           dues: (await this.feeReports.dues({ asOf: today }, null)).totals,
+          defaulters: await this.defaulterCounts(today),
+          absentToday: await this.absentees(today),
+          admissions: await this.newAdmissions(addDays(today, -6), today),
           staff: { active: staff.meta.total },
           upcoming: await this.upcoming(today, year?.id ?? null),
         };
       },
     );
+  }
+
+  /** Students with anything overdue, and those over 60 days. */
+  private async defaulterCounts(today: string) {
+    const { students } = await this.feeReports.dues({ asOf: today }, null);
+    const overdue = students.filter((s) => s.overdue > 0);
+    return {
+      students: overdue.length,
+      over60: overdue.filter((s) => s.oldestDueDate < addDays(today, -60))
+        .length,
+    };
+  }
+
+  /** Who is marked absent today (any status that counts as absent). */
+  private async absentees(today: string) {
+    const rows = await this.ds.getManager().query<
+      {
+        student_id: string;
+        name: string;
+        admission_number: string;
+        class_name: string;
+        section_name: string;
+        roll_no: string | null;
+      }[]
+    >(
+      `SELECT DISTINCT ON (s."id", c."level", sec."name", e."roll_no")
+              s."id" AS "student_id",
+              concat_ws(' ', s."first_name", s."middle_name", s."last_name") AS "name",
+              s."admission_number", c."name" AS "class_name",
+              sec."name" AS "section_name", e."roll_no"
+         FROM "attendance_records" rec
+         JOIN "attendance_registers" reg ON reg."id" = rec."register_id"
+         JOIN "student_enrollments" e ON e."id" = rec."enrollment_id"
+         JOIN "students" s ON s."id" = e."student_id"
+         JOIN "sections" sec ON sec."id" = reg."section_id"
+         JOIN "classes" c ON c."id" = sec."class_id"
+        WHERE rec."org_id" = $1 AND reg."date" = $2
+          AND (rec."status_code" = 'absent' OR rec."status_code" IN (
+                SELECT "code" FROM "attendance_statuses"
+                 WHERE "org_id" = $1 AND "counts_as" = 'absent'))
+        ORDER BY c."level", sec."name", e."roll_no", s."id"`,
+      [this.ds.orgId, today],
+    );
+    return {
+      count: rows.length,
+      students: rows.slice(0, 50).map((r) => ({
+        studentId: r.student_id,
+        name: r.name,
+        admissionNumber: r.admission_number,
+        className: r.class_name,
+        sectionName: r.section_name,
+        rollNo: r.roll_no,
+      })),
+    };
+  }
+
+  /** Students admitted between two days (inclusive), newest first. */
+  private async newAdmissions(from: string, to: string) {
+    const rows = await this.ds.getManager().query<
+      {
+        id: string;
+        name: string;
+        admission_date: string;
+        class_name: string | null;
+        section_name: string | null;
+      }[]
+    >(
+      `SELECT s."id",
+              concat_ws(' ', s."first_name", s."middle_name", s."last_name") AS "name",
+              to_char(s."admission_date", 'YYYY-MM-DD') AS "admission_date",
+              c."name" AS "class_name", sec."name" AS "section_name"
+         FROM "students" s
+         LEFT JOIN "student_enrollments" e
+           ON e."student_id" = s."id" AND e."status" = 'active'
+         LEFT JOIN "sections" sec ON sec."id" = e."section_id"
+         LEFT JOIN "classes" c ON c."id" = sec."class_id"
+        WHERE s."org_id" = $1 AND s."deleted_at" IS NULL
+          AND s."admission_date" BETWEEN $2 AND $3
+        ORDER BY s."admission_date" DESC, s."created_at" DESC`,
+      [this.ds.orgId, from, to],
+    );
+    return {
+      from,
+      count: rows.length,
+      students: rows.slice(0, 20).map((r) => ({
+        studentId: r.id,
+        name: r.name,
+        admissionDate: r.admission_date,
+        className: r.class_name,
+        sectionName: r.section_name,
+      })),
+    };
   }
 
   /** Today's sections and their registers, and the marks still to enter. */

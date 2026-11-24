@@ -94,3 +94,67 @@ export const saveAttendance = (
     query: { date },
     body: { records, ...(reason ? { reason } : {}) },
   })
+
+export type CountsAs = "present" | "absent" | "late" | "leave" | "half_day"
+
+export interface MonthlyRegister {
+  section: { id: string; name: string; className: string; session: string }
+  month: string
+  days: {
+    date: string
+    day: number
+    weekday: string
+    off: "holiday" | "weekend" | null
+    offName: string | null
+    taken: boolean
+    attended: number
+  }[]
+  students: {
+    enrollmentId: string
+    rollNo: string | null
+    name: string
+    admissionNumber: string
+    cells: string[]
+    days: number
+    present: number
+    absent: number
+    late: number
+    leave: number
+    halfDay: number
+    percentage: number | null
+  }[]
+  legend: { symbol: string; label: string; countsAs: CountsAs }[]
+}
+
+export const monthlyRegisterQuery = (sectionId: string, month: string) =>
+  queryOptions({
+    queryKey: ["attendance", "register", sectionId, month] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<MonthlyRegister>("/attendance/reports/monthly-register", {
+        signal,
+        query: { sectionId, month },
+      }),
+  })
+
+export interface RegisterCorrection {
+  id: string
+  date: string
+  studentName: string
+  rollNo: string | null
+  oldStatus: string
+  newStatus: string
+  reason: string
+  source: string
+  changedByName: string | null
+  changedAt: string
+}
+
+export const registerCorrectionsQuery = (sectionId: string, month: string) =>
+  queryOptions({
+    queryKey: ["attendance", "corrections", sectionId, month] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<RegisterCorrection[]>("/attendance/reports/corrections", {
+        signal,
+        query: { sectionId, month },
+      }),
+  })

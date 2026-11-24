@@ -1,4 +1,6 @@
 import {
+  IsEmail,
+  MaxLength,
   IsString,
   IsNotEmpty,
   Length,
@@ -33,6 +35,22 @@ export class CreateOrganizationDto {
   @IsOptional()
   @IsUUID('4')
   ownerUserId?: string;
+
+  /**
+   * Admin callers only, instead of `ownerUserId`: the owner's email. An
+   * existing account is used; otherwise one is created without a password,
+   * and the activation link lets the owner choose it.
+   */
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  ownerEmail?: string;
+
+  /** The new owner account's name (with `ownerEmail`). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  ownerName?: string;
 
   /** Defaults to `school`. */
   @IsOptional()

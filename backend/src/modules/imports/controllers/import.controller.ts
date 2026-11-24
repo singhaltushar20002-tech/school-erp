@@ -34,6 +34,7 @@ import { RequirePermissions } from '~/modules/rbac/decorators/require-permission
 import { PermissionsGuard } from '~/modules/rbac/guards/permissions.guard';
 import { PERMISSIONS } from '~/modules/rbac/permissions.catalog';
 import {
+  ColumnMapDto,
   CommitImportDto,
   FilterImportDto,
   StartImportDto,
@@ -59,6 +60,7 @@ import { ImportService } from '../services/import.service';
   PERMISSIONS.STUDENTS_IMPORT,
   PERMISSIONS.EMPLOYEES_IMPORT,
   PERMISSIONS.RESULTS_ENTER,
+  PERMISSIONS.FEES_BILL,
 )
 export class ImportController {
   constructor(private readonly imports: ImportService) {}
@@ -101,6 +103,21 @@ export class ImportController {
   @ResponseMessage('Import')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.imports.findById(id);
+  }
+
+  /** The template's columns and the file's headers, to match them by hand. */
+  @Get(':id/columns')
+  @ResponseMessage('Import columns')
+  columns(@Param('id', ParseUUIDPipe) id: string) {
+    return this.imports.columnsOf(id);
+  }
+
+  /** Saves the column matching and checks the file again (a job). */
+  @Post(':id/columns')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ResponseMessage('Import is being checked again')
+  remap(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ColumnMapDto) {
+    return this.imports.remap(id, dto.columnMap);
   }
 
   @Post(':id/commit')

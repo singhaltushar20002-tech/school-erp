@@ -86,10 +86,34 @@ export async function buildTemplate<T>(
  * problem is collected with its row and column instead of throwing, so the
  * import preview can show them all. Empty rows are skipped.
  */
+/** The header row of a file, as written (for matching columns by hand). */
+export async function readHeaders(
+  file: Buffer,
+  format: 'xlsx' | 'csv' = 'xlsx',
+): Promise<string[]> {
+  const wb = new ExcelJS.Workbook();
+  const ws =
+    format === 'csv'
+      ? await wb.csv.read(Readable.from(file))
+      : (await wb.xlsx.load(file as unknown as ArrayBuffer), wb.worksheets[0]);
+  const headers: string[] = [];
+  ws?.getRow(1).eachCell((cell) => {
+    const text = String(cell.text).trim();
+    if (text) headers.push(text);
+  });
+  return headers;
+}
+
+/**
+ * Reads the rows under `columns`. `mapping` (template header → the file's
+ * header) matches columns the file names differently; an empty value
+ * leaves an optional column out.
+ */
 export async function parseSheet<T>(
   file: Buffer,
   columns: SheetColumn<T>[],
   format: 'xlsx' | 'csv' = 'xlsx',
+  mapping: Record<string, string> | null = null,
 ): Promise<ParseResult<T>> {
   const wb = new ExcelJS.Workbook();
   const ws =
@@ -104,7 +128,11 @@ export async function parseSheet<T>(
   ws.getRow(1).eachCell((cell, col) => {
     headerIndex.set(norm(String(cell.text).replace(/\*$/, '')), col);
   });
-  const positions = columns.map((c) => headerIndex.get(norm(c.header)));
+  const positions = columns.map((c) => {
+    const mapped = mapping?.[c.header];
+    if (mapped === '') return undefined;
+    return headerIndex.get(norm(mapped ?? c.header));
+  });
   columns.forEach((c, i) => {
     if (positions[i] === undefined && c.required) {
       errors.push({

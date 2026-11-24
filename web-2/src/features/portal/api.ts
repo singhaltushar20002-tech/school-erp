@@ -2,6 +2,13 @@ import { queryOptions } from "@tanstack/react-query"
 
 import type { AttendanceTally } from "~/features/dashboard/api"
 import type { FeeStatement } from "~/features/students/api"
+import type { CalendarMonth } from "~/features/calendar/api"
+import type { Loan } from "~/features/library/api"
+import type { TimetableGrid } from "~/features/timetable/api"
+import type {
+  LivePosition,
+  Route as TransportRoute,
+} from "~/features/transport/api"
 import { apiFetch } from "~/lib/api/client"
 
 // The guardian and student portal (backend/src/modules/portal/). Every
@@ -298,3 +305,61 @@ export async function portalReceiptUrl(receiptId: string): Promise<string> {
   if (!job.downloadUrl) throw new Error("PDF not ready")
   return job.downloadUrl
 }
+
+export interface PortalHomework {
+  id: string
+  subjectName: string
+  title: string
+  description: string | null
+  assignedOn: string
+  dueDate: string
+  handedIn: boolean
+  attachmentLinks: { fileId: string; name: string; url: string }[]
+}
+
+export const childHomeworkQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "homework"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<PortalHomework[]>(`${child(id)}/homework`, { signal }),
+  })
+
+export const childTimetableQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "timetable"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<{ timetable: TimetableGrid | null }>(`${child(id)}/timetable`, {
+        signal,
+      }),
+  })
+
+export const childCalendarQuery = (id: string, month: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "calendar", month] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<CalendarMonth>(`${child(id)}/calendar`, {
+        signal,
+        query: { month },
+      }),
+  })
+
+export const childTransportQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "transport"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<{
+        transport: {
+          route: TransportRoute
+          stopId: string
+          live: LivePosition
+        } | null
+      }>(`${child(id)}/transport`, { signal }),
+    refetchInterval: 30_000,
+  })
+
+export const childLibraryQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["portal", "children", id, "library"] as const,
+    queryFn: ({ signal }) =>
+      apiFetch<Loan[]>(`${child(id)}/library`, { signal }),
+  })

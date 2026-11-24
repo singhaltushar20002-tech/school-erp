@@ -1,5 +1,6 @@
 import {
   BellIcon,
+  BookOpenCheckIcon,
   CalendarCheckIcon,
   HouseIcon,
   ReceiptTextIcon,
@@ -23,6 +24,7 @@ export interface PortalNavItem {
 export const PORTAL_NAV: PortalNavItem[] = [
   { id: "home", href: "/student", icon: HouseIcon },
   { id: "attendance", href: "/student/attendance", icon: CalendarCheckIcon },
+  { id: "homework", href: "/student/homework", icon: BookOpenCheckIcon },
   { id: "results", href: "/student/results", icon: TrophyIcon },
   { id: "fees", href: "/student/fees", icon: ReceiptTextIcon },
   { id: "notices", href: "/student/notices", icon: BellIcon },

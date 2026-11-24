@@ -91,7 +91,12 @@ export class FileService {
     purposeName: FilePurposeName,
   ): Promise<StoredFile> {
     const purpose = FILE_PURPOSES[purposeName];
-    const limit = Math.min(purpose.maxBytes, this.maxBytes);
+    // `UPLOAD_MAX_BYTES` caps what clients send; files the server makes
+    // (a school's full export, a class's report cards) have their own limit.
+    const limit =
+      purposeName === 'generated'
+        ? purpose.maxBytes
+        : Math.min(purpose.maxBytes, this.maxBytes);
     if (file.buffer.length === 0) {
       throw new BadRequestException({
         message: 'The file is empty',

@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsDefined,
   IsEnum,
@@ -48,6 +49,16 @@ export class DefaultersQueryDto extends DuesQueryDto {
   @IsInt()
   @Min(0)
   minAmount?: number;
+}
+
+/** `POST /fees/reminders`: remind these students' families now. */
+export class RemindDuesDto {
+  @IsDefined()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(2000)
+  @IsUUID('4', { each: true })
+  studentIds: string[];
 }
 
 export class PeriodRangeDto {

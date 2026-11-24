@@ -183,6 +183,50 @@ export class SettingsService {
     };
   }
 
+  /**
+   * The school's letterhead for PDFs, as the profile's letterhead settings
+   * choose: the logo as a data URI, the address and contact lines, the
+   * school code (UDISE+ / affiliation) and the tagline.
+   */
+  async letterhead(): Promise<{
+    name: string;
+    logo: string | null;
+    address: string | null;
+    contact: string | null;
+    code: string | null;
+    tagline: string | null;
+    footer: string | null;
+  }> {
+    const [profile, org] = [
+      await this.getSection('profile'),
+      await this.findOrganization(),
+    ];
+    const lh = profile.letterhead;
+    let logo: string | null = null;
+    if (lh.showLogo && org.logoFileId) {
+      const read = await this.files.read(org.logoFileId).catch(() => null);
+      if (read) {
+        logo = `data:${read.mime};base64,${read.buffer.toString('base64')}`;
+      }
+    }
+    const a = profile.address;
+    const address = [a.line1, a.line2, a.area, a.district, a.postCode]
+      .filter(Boolean)
+      .join(', ');
+    const contact = [profile.phone, profile.email, profile.website]
+      .filter(Boolean)
+      .join(' · ');
+    return {
+      name: org.name,
+      logo,
+      address: lh.showAddress && address ? address : null,
+      contact: lh.showContact && contact ? contact : null,
+      code: lh.showEiin ? org.eiin : null,
+      tagline: lh.tagline,
+      footer: lh.footerText,
+    };
+  }
+
   /** Signed URLs of the public home page's images (null when not set). */
   async homePageImages(): Promise<Record<HomeImage, string | null>> {
     const page = (await this.getSection('profile')).homePage;
