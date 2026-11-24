@@ -44,7 +44,7 @@ export class Plan {
   })
   minFee: number;
 
-  @Column({ type: 'varchar', length: 3, default: 'BDT' })
+  @Column({ type: 'varchar', length: 3, default: 'INR' })
   currency: string;
 
   /** Module keys (`plans.catalog.ts`). */
