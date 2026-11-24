@@ -8,7 +8,7 @@ Monorepo for a school administration platform: admissions, academics, people (st
 
 | Path | Description |
 |------|--------------|
-| `frontend/` | Next.js App Router app (dashboard, marketing pages, shared UI) |
+| `web-2/` | Next.js App Router app (dashboard, marketing pages, shared UI) |
 | `backend/` | NestJS HTTP API |
 | `doc/` | Product docs — menu IA, features |
 
@@ -38,10 +38,10 @@ docker compose down -v    # stop and wipe all data
 
 Postgres uses host port 5433 so it can coexist with a native Postgres on 5432; set `DB_PORT=5433` in `backend/.env.development`. To change any port or credential, copy `.env.docker.example` to `.env` in the repo root.
 
-## Frontend
+## web-2
 
 ```bash
-cd frontend
+cd web-2
 npm install
 npm run dev
 ```
