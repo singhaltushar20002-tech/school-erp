@@ -66,28 +66,13 @@
         "developer": "Developer"
       }
     },
-    "home": {
-      "title": "Welcome, {name}",
-      "body": "The {brand} platform console. Its screens arrive in the next slice.",
-      "soon": "Coming soon",
-      "areas": {
-        "schools": {
-          "title": "Schools",
-          "body": "Every school, its plan and status; open a school as support."
-        },
-        "plans": {
-          "title": "Plans",
-          "body": "Plans, their modules and limits."
-        },
-        "users": {
-          "title": "Users",
-          "body": "Accounts across schools and the platform team."
-        },
-        "audit": {
-          "title": "Audit log",
-          "body": "Platform actions and sign-ins."
-        }
-      }
+    "nav": {
+      "label": "Console sections",
+      "overview": "Overview",
+      "schools": "Schools",
+      "plans": "Plans",
+      "staff": "Platform team",
+      "audit": "Audit log"
     }
   },
   "unknownSchool": {
@@ -3464,5 +3449,208 @@
     "preparing": "Preparing… this can take a minute",
     "ready": "Export ready",
     "failed": "Export failed"
+  },
+  "console": {
+    "common": {
+      "pagination": "Pages",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOf": "Page {page} of {pages}"
+    },
+    "overview": {
+      "title": "Welcome, {name}",
+      "body": "Every school on the platform, the plans they're on and what's happening.",
+      "stats": {
+        "schools": "Schools",
+        "students": "Active students",
+        "trials": "On trial",
+        "attention": "Need attention"
+      },
+      "byPlan": "Schools by plan",
+      "trialsEnding": "Trials ending in the next 2 weeks",
+      "recent": "Recent activity",
+      "allActivity": "See all"
+    },
+    "schools": {
+      "title": "Schools",
+      "description": "Every school on the platform, its plan and status.",
+      "add": "Add school",
+      "search": "Search name or address",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "plan": "Plan",
+      "allPlans": "All plans",
+      "count": "{count, plural, one {# school} other {# schools}}",
+      "empty": "No schools match",
+      "emptyBody": "Try another search, status or plan.",
+      "school": "School",
+      "students": "Students",
+      "joined": "Joined",
+      "addOns": "+{n} add-ons",
+      "trialUntil": "until {date}",
+      "statuses": {
+        "trial": "Trial",
+        "active": "Active",
+        "past_due": "Payment due",
+        "inactive": "Inactive",
+        "suspended": "Suspended",
+        "pending": "Pending"
+      },
+      "types": {
+        "school": "School",
+        "college": "College",
+        "coaching": "Coaching centre",
+        "english_medium": "English medium",
+        "madrasa": "Madrasa"
+      },
+      "plans": {
+        "free": "Free",
+        "basic": "Basic",
+        "standard": "Standard",
+        "premium": "Premium"
+      },
+      "addTitle": "Add a school",
+      "addHint": "The school gets its own address, system roles and settings straight away.",
+      "name": "School name",
+      "slug": "Web address",
+      "slugHint": "The school opens at {slug}. followed by your domain. Letters, numbers and dashes.",
+      "type": "Type",
+      "trialDays": "Trial days",
+      "trialHint": "0 starts it on the plan straight away.",
+      "owner": "Owner",
+      "ownerHint": "Optional. The owner gets an email to set a password and run the school's setup.",
+      "ownerName": "Owner's name",
+      "ownerEmail": "Owner's email",
+      "cancel": "Cancel",
+      "create": "Create school",
+      "creating": "Creating…",
+      "created": "School created",
+      "createdHint": "The owner's activation email is on its way.",
+      "failed": "That didn't work"
+    },
+    "school": {
+      "back": "All schools",
+      "notFound": "School not found",
+      "students": "{n} students",
+      "details": "Details",
+      "slug": "Web address",
+      "udise": "UDISE code",
+      "joined": "Joined",
+      "setup": "Setup",
+      "setupDone": "Finished {date}",
+      "setupPending": "Not finished",
+      "members": "People with access",
+      "suspend": "Suspend school",
+      "reactivate": "Reactivate school",
+      "suspended": "School suspended",
+      "reactivated": "School reactivated",
+      "owner": "Owner",
+      "noOwner": "This school has no owner yet.",
+      "ownerActive": "Has signed in and set a password.",
+      "ownerNotActivated": "Hasn't activated the account yet.",
+      "resendLink": "Resend activation email",
+      "linkSent": "Activation email sent",
+      "plan": "Plan",
+      "price": "{perStudent} per student a month, minimum {min}",
+      "addOns": "Add-ons",
+      "savePlan": "Save plan",
+      "planSaved": "Plan changed",
+      "trialEnds": "Trial ends {date}.",
+      "extendDays": "Days to add",
+      "extend": "Extend trial",
+      "trialExtended": "Trial extended",
+      "limits": "Limits",
+      "limitsHint": "Leave blank to use the plan's limit (shown faded).",
+      "limit": {
+        "students": "Students",
+        "storageMb": "Storage (MB)",
+        "users": "Users",
+        "admins": "School admins"
+      },
+      "unlimited": "No limit",
+      "saveLimits": "Save limits",
+      "limitsSaved": "Limits saved",
+      "planModules": "Included in this plan: {modules}.",
+      "failed": "That didn't work"
+    },
+    "plans": {
+      "title": "Plans",
+      "description": "What each plan costs and includes. Plans are set in the product's code.",
+      "retired": "Retired",
+      "free": "Free",
+      "price": "{perStudent} per student a month, minimum {min}",
+      "schools": "{count, plural, one {# school} other {# schools}} on this plan",
+      "limit": {
+        "students": "Students",
+        "admins": "School admins",
+        "users": "Users",
+        "storageMb": "Storage"
+      },
+      "unlimited": "No limit",
+      "gb": "{n} GB",
+      "addOn": "(add-on)",
+      "mb": "{n} MB"
+    },
+    "staff": {
+      "title": "Platform team",
+      "description": "The people who run the platform and what they can do in this console.",
+      "add": "Add team member",
+      "roleHints": {
+        "super_admin": "Everything, including the team",
+        "admin": "Runs schools, plans and limits",
+        "support": "Sees everything; can resend owner links",
+        "developer": "Sees everything, changes nothing"
+      },
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "since": "Added",
+      "actions": "Actions",
+      "you": "You",
+      "noConsole": "No console access",
+      "roleFor": "Role of {name}",
+      "statuses": {
+        "active": "Active",
+        "pending": "Pending",
+        "suspended": "Blocked",
+        "deactivated": "Deactivated",
+        "banned": "Banned"
+      },
+      "tempPassword": "Must change password",
+      "block": "Block",
+      "unblock": "Unblock",
+      "remove": "Remove {name}",
+      "saved": "Saved",
+      "failed": "That didn't work",
+      "addTitle": "Add a team member",
+      "addHint": "They sign in at this console's address and must change the password at first sign-in.",
+      "password": "Temporary password",
+      "passwordHint": "At least 8 characters. Share it with them privately.",
+      "addConfirm": "Add",
+      "added": "Team member added",
+      "cancel": "Cancel"
+    },
+    "audit": {
+      "title": "Audit log",
+      "description": "Platform actions and sign-ins, with values before and after.",
+      "kind": "Kind",
+      "allKinds": "Everything",
+      "kinds": {
+        "auth": "Sign-ins",
+        "organization": "School changes",
+        "platform_user": "Team changes",
+        "membership": "Owner and member changes"
+      },
+      "school": "School",
+      "allSchools": "All schools",
+      "from": "From",
+      "to": "To",
+      "empty": "Nothing recorded",
+      "emptyBody": "Try other dates or filters.",
+      "field": "Field",
+      "before": "Before",
+      "after": "After"
+    }
   }
 }

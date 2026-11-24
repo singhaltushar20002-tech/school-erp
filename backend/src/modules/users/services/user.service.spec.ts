@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
+import { PlatformAuditService } from '~/modules/audit/services/platform-audit.service';
 import { User } from '../entities/user.entity';
 import { UserStatus } from '../enums/user-status.enum';
 import { PlatformRole } from '~/modules/users/enums/platform-role.enum';
@@ -104,6 +105,10 @@ describe('UserService', () => {
         UserService,
         { provide: getRepositoryToken(User), useValue: userRepo },
         { provide: SessionService, useValue: sessions },
+        {
+          provide: PlatformAuditService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined) },
+        },
       ],
     }).compile();
 
