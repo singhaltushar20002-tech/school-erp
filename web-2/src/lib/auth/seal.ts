@@ -11,7 +11,7 @@ function keyFor(secret: string): Uint8Array {
   let key = keys.get(secret)
   if (!key) {
     key = new Uint8Array(
-      hkdfSync("sha256", secret, "", "kampasy session cookie v1", 32)
+      hkdfSync("sha256", secret, "", "school-erp session cookie v1", 32)
     )
     keys.set(secret, key)
   }

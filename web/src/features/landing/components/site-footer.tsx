@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { KampasyMark } from "~/components/brand/kampasy-mark";
+import { BrandMark } from "~/components/brand/brand-mark";
 import { COMPANY_LOCATION, CONTACT_EMAIL } from "~/config/site";
 import { Container } from "./primitives";
 
@@ -24,11 +24,11 @@ export function SiteFooter() {
           <Link
             href="/"
             className="inline-flex items-center gap-2"
-            aria-label="Kampasy home"
+            aria-label="School ERP home"
           >
-            <KampasyMark className="size-7" />
+            <BrandMark className="size-7" />
             <span className="font-heading text-lg font-bold tracking-tight">
-              Kampasy
+              School ERP
             </span>
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/75">
@@ -66,7 +66,7 @@ export function SiteFooter() {
 
       <div className="border-t border-white/10">
         <Container className="max-w-6xl py-6 text-xs text-white/60">
-          © <CopyrightYear /> Kampasy
+          © <CopyrightYear /> Fast IO
         </Container>
       </div>
     </footer>

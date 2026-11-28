@@ -27,7 +27,7 @@ export function Why() {
           {/* Column labels, shown once; on phones each row labels itself */}
           <div className="text-ink-muted hidden pb-3 text-sm font-semibold md:grid md:grid-cols-[1fr_1.4fr] md:gap-12">
             <span>Before</span>
-            <span>With Kampasy</span>
+            <span>With School ERP</span>
           </div>
 
           <ul className="border-ink/10 border-t">

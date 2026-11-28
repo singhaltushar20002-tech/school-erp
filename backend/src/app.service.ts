@@ -13,7 +13,8 @@ export class AppService {
       description: 'A School ERP API built with NestJS and TypeORM',
       architecture: 'Multi-tenant: shared schema with row-level security',
       stack: ['NestJS', 'TypeORM', 'PostgreSQL', 'TypeScript'],
-      author: 'Biprodas Roy',
+      author: 'Fast IO',
+      contact: 'business@fastio.in',
     };
   }
 }

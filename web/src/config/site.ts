@@ -10,14 +10,14 @@ export const APP_URL = (
 export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "lvh.me";
 
 export const CONTACT_EMAIL =
-  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "hello@kampasy.com";
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "business@fastio.in";
 
 export const APP_LINKS = {
   signup: `${APP_URL}/signup`,
   login: `${APP_URL}/login`,
 } as const;
 
-/** `https://greenfield.kampasy.com/login`, keeping the app's protocol and port. */
+/** `https://greenfield.example.com/login`, keeping the app's protocol and port. */
 export function schoolLoginUrl(slug: string): string {
   const { protocol, port } = new URL(APP_URL);
   return `${protocol}//${slug}.${ROOT_DOMAIN}${port ? `:${port}` : ""}/login`;

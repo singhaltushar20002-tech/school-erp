@@ -78,7 +78,7 @@ function DashboardPreview() {
           <span className="bg-ink/10 size-2.5 rounded-full" />
           <span className="bg-ink/10 size-2.5 rounded-full" />
           <span className="text-ink-muted ms-4 truncate text-xs">
-            greenfield.kampasy.app/dashboard
+            greenfield.example.com/dashboard
           </span>
         </div>
         <div className="flex">

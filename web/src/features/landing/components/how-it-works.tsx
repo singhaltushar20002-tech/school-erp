@@ -18,7 +18,7 @@ export function HowItWorks() {
             The busywork runs itself.
           </SectionTitle>
           <p className="text-ink-muted mx-auto mt-5 max-w-xl text-lg leading-relaxed">
-            Someone does one small thing, and Kampasy carries it the rest of the
+            Someone does one small thing, and School ERP carries it the rest of the
             way, all the way to the guardian&apos;s phone.
           </p>
         </div>

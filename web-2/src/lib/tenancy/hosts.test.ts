@@ -66,8 +66,8 @@ describe("classifyHost", () => {
   })
 
   it("follows the configured root and admin hosts", () => {
-    const prod = { rootDomain: "kampasy.com", adminHost: "admin.kampasy.com" }
-    expect(classifyHost("acme.kampasy.com", prod)).toMatchObject({
+    const prod = { rootDomain: "example.com", adminHost: "admin.example.com" }
+    expect(classifyHost("acme.example.com", prod)).toMatchObject({
       kind: "school",
       slug: "acme",
     })
@@ -102,8 +102,8 @@ describe("urlOnHost", () => {
     expect(urlOnHost("http://acme.lvh.me:3000", "lvh.me", "/find-school")).toBe(
       "http://lvh.me:3000/find-school"
     )
-    expect(urlOnHost("https://acme.kampasy.com", "kampasy.com")).toBe(
-      "https://kampasy.com/"
+    expect(urlOnHost("https://acme.example.com", "example.com")).toBe(
+      "https://example.com/"
     )
   })
 })

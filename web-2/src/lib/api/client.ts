@@ -10,7 +10,7 @@ import {
  * CSRF check: a cross-site form or image can't set a custom header.
  */
 export const CSRF_HEADER = "x-requested-with"
-export const CSRF_VALUE = "kampasy"
+export const CSRF_VALUE = "school-erp"
 
 type QueryValue = string | number | boolean | null | undefined
 

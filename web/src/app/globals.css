@@ -56,7 +56,7 @@
 }
 
 :root {
-  /* Kampasy brand */
+  /* Brand */
   --brand: oklch(0.42 0.09 158);
   --brand-strong: oklch(0.53 0.1 158);
   --brand-soft: oklch(0.93 0.05 160);

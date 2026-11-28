@@ -4,8 +4,8 @@ import { HeaderNotifications } from "~/app/(dashboard)/_components/header-notifi
 import { UserButton } from "~/components/user-button"
 
 export const dashboardUser = {
-  name: "Biprodas R.",
-  email: "biprodas.cse@gmail.com",
+  name: "Demo User",
+  email: "business@fastio.in",
   avatar: "/avatars/shadcn.jpg",
 } as const
 

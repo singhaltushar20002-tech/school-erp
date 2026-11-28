@@ -54,7 +54,7 @@
 }
 
 :root {
-  /* Kampasy brand: deep school green, warm paper neutrals, amber highlight. */
+  /* Brand: deep school green, warm paper neutrals, amber highlight. */
   --background: oklch(0.968 0.005 106);
   --foreground: oklch(0.24 0.035 165);
   --card: oklch(1 0 0);

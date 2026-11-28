@@ -81,7 +81,8 @@ export function SiteFooter() {
       </Container>
       <Separator className="bg-brand-foreground/10" />
       <Container className="py-6 text-sm text-brand-foreground/60">
-        © {new Date().getFullYear()} {BRAND.name}
+        © {new Date().getFullYear()} {BRAND.company}. {BRAND.name} is made by{" "}
+        {BRAND.company}.
       </Container>
     </footer>
   )

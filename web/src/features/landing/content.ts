@@ -1,5 +1,5 @@
 export const NAV_LINKS = [
-  { label: "Why Kampasy", href: "/#why" },
+  { label: "Why School ERP", href: "/#why" },
   { label: "How it works", href: "/#how-it-works" },
   { label: "Modules", href: "/#modules" },
   { label: "Security", href: "/#security" },
@@ -498,7 +498,7 @@ export const FAQ_GROUPS = [
       {
         question: "Does it work on mobile?",
         answer:
-          "Every core task works on a 360 px phone screen. Kampasy installs to the home screen like an app, and attendance can be taken offline and synced later.",
+          "Every core task works on a 360 px phone screen. School ERP installs to the home screen like an app, and attendance can be taken offline and synced later.",
       },
     ],
   },

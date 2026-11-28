@@ -118,7 +118,7 @@ describe("passesCsrfCheck", () => {
     expect(
       passesCsrfCheck(
         "DELETE",
-        headers({ "x-requested-with": "kampasy" }),
+        headers({ "x-requested-with": "school-erp" }),
         host
       )
     ).toBe(true)
@@ -126,7 +126,7 @@ describe("passesCsrfCheck", () => {
 
   it("refuses another origin even with the header", () => {
     const withOrigin = (origin: string) =>
-      headers({ "x-requested-with": "kampasy", origin })
+      headers({ "x-requested-with": "school-erp", origin })
     expect(
       passesCsrfCheck("POST", withOrigin("http://acme.lvh.me:3000"), host)
     ).toBe(true)

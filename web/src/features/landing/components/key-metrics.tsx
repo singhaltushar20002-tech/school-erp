@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 export function KeyMetrics() {
   return (
     <section
-      aria-label="Kampasy in numbers"
+      aria-label="School ERP in numbers"
       className="border-border border-y bg-white py-10 sm:py-12"
     >
       <Container className="max-w-6xl">

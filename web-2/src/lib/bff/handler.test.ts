@@ -146,7 +146,7 @@ describe("handleBff", () => {
         method: "POST",
         cookie,
         headers: {
-          "x-requested-with": "kampasy",
+          "x-requested-with": "school-erp",
           "content-type": "application/json",
         },
         body: "{}",
@@ -236,7 +236,7 @@ describe("handleBff", () => {
         method: "POST",
         cookie: await sealedSession(),
         headers: {
-          "x-requested-with": "kampasy",
+          "x-requested-with": "school-erp",
           origin: ORIGIN,
           "content-type": "application/json",
           "content-length": String(payload.length),
@@ -286,7 +286,7 @@ describe("handleBff", () => {
       await request("/api/auth/identities/google", {
         method: "DELETE",
         cookie: await sealedSession(),
-        headers: { "x-requested-with": "kampasy" },
+        headers: { "x-requested-with": "school-erp" },
       })
     )
 

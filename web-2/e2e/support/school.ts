@@ -98,7 +98,7 @@ export async function bff<T = unknown>(
       const response = await fetch(`/api${path}`, {
         method: init.method ?? "GET",
         headers: {
-          "x-requested-with": "kampasy",
+          "x-requested-with": "school-erp",
           accept: "application/json",
           ...(init.body !== undefined
             ? { "content-type": "application/json" }

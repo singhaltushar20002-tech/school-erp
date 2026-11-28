@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { KampasyMark } from "~/components/brand/kampasy-mark";
+import { BrandMark } from "~/components/brand/brand-mark";
 import { cn } from "~/lib/utils";
 
 export function Container({
@@ -46,11 +46,11 @@ export function Logo({ className }: { className?: string }) {
     <Link
       href="/"
       className={cn("text-ink flex items-center gap-2", className)}
-      aria-label="Kampasy home"
+      aria-label="School ERP home"
     >
-      <KampasyMark />
+      <BrandMark />
       <span className="font-heading text-xl font-bold tracking-tight">
-        Kampasy
+        School ERP
       </span>
     </Link>
   );

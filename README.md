@@ -1,7 +1,5 @@
 # School ERP
 
-[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/biprodas/badge.svg)](https://hub.xerj.org/contributors/biprodas)
-
 Monorepo for a school administration platform: admissions, academics, people (students, parents, staff), finance, campus services, communication, and reporting. The UI is a Next.js dashboard with a configurable sidebar; the API layer is NestJS.
 
 ## Repository layout

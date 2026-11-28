@@ -42,7 +42,7 @@ export default async function AccountLayout({
             {t("copyright", {
               // A string: as a number it would print as "2,026".
               year: String(new Date().getFullYear()),
-              brand: BRAND.name,
+              brand: BRAND.company,
             })}
           </p>
           <p>

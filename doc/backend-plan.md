@@ -1,6 +1,6 @@
 # School ERP: Backend implementation plan (Phase 1a)
 
-> **Status:** v0.3 · **Owner:** Biprodas Roy · **Last updated:** 2026-10-24
+> **Status:** v0.3 · **Owner:** Fast IO · **Last updated:** 2026-10-24
 > This doc covers build order and acceptance criteria for `backend/` (NestJS 11, TypeORM 1.x, PostgreSQL) in Phase 1a.
 > It does not specify the product. The specs are in [`prd.md`](./prd.md) (v1.3) and [`domains-and-routing.md`](./domains-and-routing.md); code conventions are in [`../CLAUDE.md`](../CLAUDE.md).
 

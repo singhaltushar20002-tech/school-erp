@@ -10,7 +10,7 @@ export function DemoCta() {
             Give your school the system it deserves.
           </SectionTitle>
           <p className="mx-auto mt-5 max-w-md text-lg leading-relaxed text-white/80">
-            See Kampasy with your own workflows in a free, no-pressure 30-minute
+            See School ERP with your own workflows in a free, no-pressure 30-minute
             demo.
           </p>
           <div className="mx-auto mt-10 max-w-md">

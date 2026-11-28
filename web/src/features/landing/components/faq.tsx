@@ -87,7 +87,7 @@ function HelpPanel({ className }: { className?: string }) {
         </a>
       </div>
       <p className="text-ink-muted border-border mt-6 border-t pt-4 text-sm">
-        Already using Kampasy?{" "}
+        Already using School ERP?{" "}
         <Link
           href="/find-school"
           className="text-ink font-semibold underline-offset-4 hover:underline"

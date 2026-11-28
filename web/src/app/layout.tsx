@@ -23,7 +23,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Kampasy — School management software for Bangladesh",
+  title: "School ERP — School management software",
   description:
     "Admissions, attendance, exams, fees and notices on one mobile-first school ERP. bKash & Nagad payments, GPA 5.0 results, Bangla and English. Free 30-day trial.",
 };

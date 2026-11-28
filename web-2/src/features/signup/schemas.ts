@@ -96,7 +96,7 @@ export const findSchoolSchema = z.object({ email })
 
 /**
  * "Enter your school's address": the slug, or a pasted address such as
- * `https://acme.kampasy.com/login`, which is cut down to its slug.
+ * `https://acme.example.com/login`, which is cut down to its slug.
  */
 export const schoolAddressSchema = (rootDomain: string) =>
   z.object({
