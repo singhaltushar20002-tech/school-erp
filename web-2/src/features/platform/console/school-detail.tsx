@@ -141,6 +141,23 @@ export function SchoolDetail({ id }: { id: string }) {
           </dl>
           {manage && (
             <div className="mt-3 flex flex-wrap gap-2">
+              {s.status === "trial" && (
+                <Button
+                  size="sm"
+                  disabled={run.isPending}
+                  title={t("makeActiveHint", {
+                    plan: s.plan?.name ?? humanize("free"),
+                  })}
+                  onClick={() =>
+                    run.mutate({
+                      fn: () => updateSchool(id, { status: "active" }),
+                      done: t("madeActive"),
+                    })
+                  }
+                >
+                  {t("makeActive")}
+                </Button>
+              )}
               {s.status === "suspended" ? (
                 <Button
                   size="sm"

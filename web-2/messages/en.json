@@ -3571,7 +3571,10 @@
       "saveLimits": "Save limits",
       "limitsSaved": "Limits saved",
       "planModules": "Included in this plan: {modules}.",
-      "failed": "That didn't work"
+      "failed": "That didn't work",
+      "makeActive": "Make active",
+      "madeActive": "Trial ended, school is active",
+      "makeActiveHint": "Ends the trial now. The school keeps its {plan} plan."
     },
     "plans": {
       "title": "Plans",
